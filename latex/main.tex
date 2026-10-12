@@ -30,7 +30,7 @@
 \begingroup\renewcommand\thefootnote{}\footnotetext{$^\dagger$ Supervisor.}\endgroup
 
 \begin{abstract}
-Deep neural networks for physiological signal classification predominantly rely on monolithic parameter scaling, which incurs high computational latency and uncalibrated overconfidence under clinical noise. In resource-constrained 12-lead electrocardiogram (ECG) multi-label diagnosis across 21,799 PTB-XL records, this study investigates distributing an invariant $\sim$2.0M parameter budget among compact specialized networks (MOSAIC-Med). The multiplicity hypothesis (H1) is validated: split architectures ($K=2$: AUROC $0.9085 \pm 0.0007$; $K=4$: $0.9084 \pm 0.0008$) statistically surpass the monolithic baseline ($K=1$: $0.9059 \pm 0.0010$, DeLong $p=3.63 \times 10^{-4}$). However, extreme over-fragmentation at $K=16$ degrades AUROC to $0.9048$ and triples latency. Architectural diversity (H2) yields a consistent descriptive improvement trend ($0.9110 \pm 0.0006$; Holm $p=0.058$) with lower CKA similarity ($0.9008$ vs $0.9458$), but is not statistically significant at $\alpha=0.05$. Learned Top-2 sparse routing (H3) achieves diagnostic parity ($0.9113$) while reducing computation by $28.2\%$ relative to dense ensembling (297.8 vs 414.9 MFLOPs). Selective abstention (H4) on the $10\%$ most uncertain records achieves a $4.18\%$ relative risk reduction ($p=0.0093$). Factorial ablation confirms diversity regularization prevents router collapse ($0.9088$ vs $0.9049$).
+Deep neural networks for physiological signal classification predominantly rely on monolithic parameter scaling, which incurs high computational latency and uncalibrated overconfidence under simulated signal stress. In resource-constrained 12-lead electrocardiogram (ECG) multi-label diagnosis across 21,799 PTB-XL records, this study investigates distributing an invariant $\sim$2.0M parameter budget among compact specialized networks (MOSAIC-Med). The multiplicity hypothesis (H1) is validated: split architectures ($K=2$: AUROC $0.9085 \pm 0.0007$; $K=4$: $0.9084 \pm 0.0008$) statistically surpass the monolithic baseline ($K=1$: $0.9059 \pm 0.0010$, DeLong $p=3.63 \times 10^{-4}$). However, extreme over-fragmentation at $K=16$ degrades AUROC to $0.9048$ and triples latency. Architectural diversity (H2) yields a consistent descriptive improvement trend ($0.9110 \pm 0.0006$; Holm $p=0.058$) with lower CKA similarity ($0.9008$ vs $0.9458$), but is not statistically significant at $\alpha=0.05$. Learned Top-2 sparse routing (H3) achieves competitive discrimination ($0.9113$) while reducing computation by $28.2\%$ relative to dense ensembling (297.8 vs 414.9 MFLOPs). Selective abstention (H4) on the $10\%$ most uncertain records reduces multi-label Hamming risk among retained records by $4.18\%$ ($p=0.0093$). Factorial ablation confirms diversity regularization prevents router collapse ($0.9088$ vs $0.9049$).
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -55,7 +55,7 @@ There are four contributions:
 \item \textbf{Fixed-Budget Multiplicity}: where $K \in \{1, 2, 4, 8, 16\}$ experts with an invariant budget of 2.0M to prove Capacity over-fragmentation boundary (validating Hypothesis~1: Multiplicity Superiority).
 \item \textbf{Inductive Bias Diversity}: A parameter-matched comparison (+0.92\%) between homogeneous (4$\times$ResNet) and heterogeneous (ResNet, MultiScale, TCN, Attention) experts quantified with linear CKA~\cite{kornblith2019similarity}, which shows a consistent improvement trend (adjusted p = 0.058) for Hypothesis~2: Diversity Benefit.
 \item \textbf{Sparse Adaptive Routing}: A lightweight patient-specific router regularized with the diversity entropy and failure penalties, with dynamic Top-2 routing and reduced inference FLOPs by 28.2\% (empowering Hypothesis~3: Routing Efficiency).
-\item \textbf{Clinical Robustness \& Selective Abstention}: Systematic validation across five clinical stress tests and an uncertainty-triggered deferral protocol that yielded monotonic risk reduction~\cite{kompa2024second, argha2025selective} (validating Hypothesis~4: Risk Reduction).
+\item \textbf{Stress Robustness \& Uncertainty Deferral}: Systematic evaluation across five simulated stress tests and internal site domain shift, coupled with an uncertainty-triggered deferral protocol yielding monotonic retained risk reduction~\cite{kompa2024second, argha2025selective} (validating Hypothesis~4: Risk Reduction).
 \end{enumerate}
 
 \section{Methodology}
@@ -81,11 +81,11 @@ Empirical evaluation is conducted on the PTB-XL dataset~\cite{wagner2020ptbxl, s
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Split Partition} & \textbf{Records} & \textbf{Patients} & \textbf{Age (SD)} & \textbf{Female (\%)} \\
+\textbf{Split Partition} & \textbf{Records} & \textbf{Patients} & \textbf{Age (SD)\textsuperscript{*}} & \textbf{Female (\%)} \\
 \midrule
-Training (Folds 1--8)    & 17,418 & 15,023 & 62.3 $\pm$ 31.4 & 47.8\% \\
-Validation (Fold 9)      & 2,183  & 1,942  & 64.5 $\pm$ 37.1 & 48.1\% \\
-Test (Fold 10)           & 2,198  & 1,904  & 64.4 $\pm$ 34.2 & 48.5\% \\
+Training (Folds 1--8)    & 17,418 & 15,023 & 59.4 $\pm$ 16.6 & 47.8\% \\
+Validation (Fold 9)      & 2,183  & 1,942  & 59.9 $\pm$ 17.1 & 48.1\% \\
+Test (Fold 10)           & 2,198  & 1,904  & 60.7 $\pm$ 17.3 & 48.5\% \\
 \midrule
 \textbf{Diagnostic Superclass} & \textbf{Train (\%)} & \textbf{Val (\%)} & \textbf{Test (\%)} & \textbf{Clinical Category} \\
 \midrule
@@ -100,7 +100,7 @@ HYP (Hypertrophy)            & 12.2\% & 12.1\% & 12.2\% & Ventricular/Atrial enl
 \end{ICICtable}
 \end{table}
 
-As documented in Table~\ref{tab:data_summary} and illustrated in Boxes 1--5 of Fig.~\ref{fig:method_flowchart}, records are partitioned using the official patient-stratified 10-fold split: Folds 1--8 for training, Fold 9 for validation, and Fold 10 strictly held out for final testing, guaranteeing zero patient identity leakage~\cite{strodthoff2021deep}. Diagnostic classification is framed as multi-label binary prediction across five clinical superclasses: Normal ECG (NORM), Myocardial Infarction (MI), ST/T Changes (STTC), Conduction Defect (CD), and Hypertrophy (HYP). Let $x \in \mathbb{R}^{C \times L}$ denote an input 12-lead recording ($C = 12, L = 1000$), and let $y \in \{0, 1\}^M$ denote the binary target vector for $M = 5$ superclasses. All signals are standardized instance-by-instance across time ($L=1000$) independently per lead: $x_c'(t) = (x_c(t) - \mu_c) / \max(\sigma_c, 10^{-6})$, with extreme values clipped to $[-10.0, 10.0]$. Because normalization statistics are computed strictly on individual 10-second recordings, zero dataset-level training distribution statistics are used during inference.
+As documented in Table~\ref{tab:data_summary} and illustrated in Boxes 1--5 of Fig.~\ref{fig:method_flowchart}, records are partitioned using the official patient-stratified 10-fold split: Folds 1--8 for training, Fold 9 for validation, and Fold 10 strictly held out for final testing, guaranteeing zero patient identity leakage~\cite{strodthoff2021deep}. Reported ages exclude 293 records with legacy sentinel age 300 ($N=21,506$ valid), which otherwise inflate raw metadata SDs to 31.4, 37.1, and 34.2 years, respectively. Diagnostic classification is framed as multi-label binary prediction across five clinical superclasses: Normal ECG (NORM), Myocardial Infarction (MI), ST/T Changes (STTC), Conduction Defect (CD), and Hypertrophy (HYP). Let $x \in \mathbb{R}^{C \times L}$ denote an input 12-lead recording ($C = 12, L = 1000$), and let $y \in \{0, 1\}^M$ denote the binary target vector for $M = 5$ superclasses. All signals are standardized instance-by-instance across time ($L=1000$) independently per lead: $x_c'(t) = (x_c(t) - \mu_c) / \max(\sigma_c, 10^{-6})$, with extreme values clipped to $[-10.0, 10.0]$. Because normalization statistics are computed strictly on individual 10-second recordings, zero dataset-level training distribution statistics are used during inference.
 
 \subsection{Multiplicity and Architectural Diversity}
 \label{subsec:multiplicity_diversity}
@@ -168,7 +168,7 @@ where $\mathcal{L}_{\text{diag}}$ is BCE, $\mathcal{L}_{\text{div}} = -\mathcal{
 \subsection{Uncertainty Estimation and Selective Classification}
 \label{subsec:uncertainty}
 
-In clinical deployment (Boxes 12--15 of Fig.~\ref{fig:method_flowchart}), automated models must signal low confidence on ambiguous tracings~\cite{kompa2024second}. Predictive uncertainty $U(x)$ combines binary predictive entropy and epistemic ensemble disagreement~\cite{lakshminarayanan2017simple}:
+In safety-critical workflows (Boxes 12--15 of Fig.~\ref{fig:method_flowchart}), automated models should signal low confidence on ambiguous tracings to facilitate triage or clinician review~\cite{kompa2024second}. Predictive uncertainty $U(x)$ combines binary predictive entropy and epistemic ensemble disagreement~\cite{lakshminarayanan2017simple}:
 \begin{equation}
 U(x) = \sum_{m=1}^M \mathcal{H}(\hat{y}_m(x)) + \alpha \cdot \sum_{m=1}^M \frac{1}{K}\sum_{k=1}^K (\sigma(z_{k, m}(x)) - \hat{y}_m(x))^2,
 \label{eq:uncertainty}
@@ -256,21 +256,21 @@ Sparse Top-2 Escalation   & \textbf{2.0} & \textbf{297.8} & 0.9113 $\pm$ 0.0008 
 \end{ICICtable}
 \end{table}
 
-The dense learned Adaptive Router (16K parameters) performs at peak absolute discrimination ($0.9118 \pm 0.0004$, Holm $p = 5.27 \times 10^{-5}$) at 414.9 MFLOPs. The proposed Sparse Top-2 Router achieves comparable empirical discrimination ($0.9113 \pm 0.0008$, Holm $p = 5.07 \times 10^{-5}$; difference vs. dense router $p = 0.42$) with two active experts per tracing, reducing dynamic inference compute to 297.8 MFLOPs (a 28.2\% reduction relative to dense routing, though requiring $2.40\times$ the FLOPs of the 123.9 MFLOP monolithic baseline).
+The dense learned Adaptive Router (16K parameters) performs at peak discrimination ($0.9118 \pm 0.0004$, Holm $p = 5.27 \times 10^{-5}$) at 414.9 MFLOPs. The Sparse Top-2 Router achieves empirical discrimination of $0.9113 \pm 0.0008$ (Holm $p = 5.07 \times 10^{-5}$ vs. monolithic) with two active experts per tracing, reducing dynamic inference compute to 297.8 MFLOPs (a 28.2\% reduction relative to dense routing, though requiring $2.40\times$ the FLOPs of the 123.9 MFLOP monolithic baseline). Across training seeds, the minor numerical difference between dense routing and sparse Top-2 ($0.9118$ vs. $0.9113$, cross-seed paired $t$-test $p = 0.163$) is not statistically significant, though this descriptive proximity does not establish formal equivalence.
 
-The router specializes in medically informed cardiac pathologies: For Conduction Defects (CD) and Hypertrophy (HYP), the majority of the router activates TCN-1D and MultiScale-CNN ($w_k > 0.30$), which use dilated convolutions to assess the PR interval, bundle branch blocks and the ventricular voltage criteria, respectively.
+The router specializes in cardiac pathologies: Conduction Defects (CD) and Hypertrophy (HYP) predominantly activate TCN-1D and MultiScale-CNN ($w_k > 0.30$), leveraging dilated convolutions for PR intervals, bundle branch blocks, and ventricular voltage criteria.
 
-On the other hand, ResNet-1D and ConvAttention-1D have dominant gating weights ($w_k > 0.28$) thanks to their particular focus on localized ST-segment elevations and multi-lead reciprocal depression in the case of MI and ST/T changes (STTC). Two lowest-relevance models are dynamically bypassed for each patient, without statistically significant loss of diagnostic discrimination ($p=0.42$). Parameter budgets are matched within $\pm 3.0\%$ across arms, but inference compute is not: the Top-2 router uses 297.8 MFLOPs (latency $3.42 \pm 0.08$ ms on NVIDIA Quadro T1000) versus 123.9 MFLOPs ($1.99 \pm 0.05$ ms) for the monolithic baseline. Sparse routing saves $28.2\%$ compute relative to dense heterogeneous ensembling (414.9 MFLOPs), while requiring $2.40\times$ the compute of the monolithic baseline.
+Conversely, ResNet-1D and ConvAttention-1D exhibit dominant gating weights ($w_k > 0.28$) for localized ST-elevations and reciprocal depression in MI and STTC. Two lowest-relevance models are dynamically bypassed per patient, maintaining discrimination ($0.9113$) close to dense 4-expert routing ($0.9118$). Parameter budgets are matched within $\pm 3.0\%$ across arms, but inference compute is not: Top-2 routing uses 297.8 MFLOPs (latency $3.42 \pm 0.08$ ms on NVIDIA Quadro T1000) versus 123.9 MFLOPs ($1.99 \pm 0.05$ ms) for the monolithic baseline.
 
-\subsection{Clinical Robustness Under Degradation and Domain Shift}
+\subsection{Robustness Under Simulated Stress Tests and Internal Domain Shift}
 \label{subsec:res_robustness}
 
 Table~\ref{tab:robustness_summary} and Fig.~\ref{fig:robustness_stress} report diagnostic retention across five pre-specified simulated stress tests and internal domain shift across all five random seeds. Perturbations are predefined simulated stress tests probing model resilience under synthetic noise, respiratory drift, and lead loss: (i)~High-frequency EMG noise: $X_{\text{EMG}} = X + \epsilon$, $\epsilon \sim \mathcal{N}(0, \sigma^2)$, $\sigma = 0.15$; (ii)~Low-frequency baseline wander: $X_{\text{drift}}[c, t] = X[c, t] + A \sin(2\pi f \frac{t}{f_s} + \phi_{i, c})$, $A = 0.60$, $f = 0.25$ Hz, $f_s = 100$ Hz, with independent random phase $\phi_{i, c} \sim \mathcal{U}(0, 2\pi)$ per recording and lead; (iii)~Precordial lead disconnection: leads V1--V3 zeroed ($c \in \{6, 7, 8\}$); (iv)~Limb lead disconnection: leads I--III zeroed ($c \in \{0, 1, 2\}$); and (v)~Held-out acquisition site shift ($s \ne 0$) evaluated on test records from secondary recording hardware within PTB-XL.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.92\columnwidth, height=4.6cm, keepaspectratio]{figures/robustness_stress.png}
-\caption{Diagnostic retention under real-world clinical corruptions and site domain shift across five seeds (mean $\pm$ SD). Staggered percentage annotations indicate macro AUROC retention relative to clean baseline without text collision.}
+\includegraphics[width=0.92\columnwidth, height=3.9cm, keepaspectratio]{figures/robustness_stress.png}
+\caption{Diagnostic retention under predefined simulated stress tests and internal site domain shift across five seeds (mean $\pm$ SD). Staggered percentage annotations indicate macro AUROC retention relative to clean baseline without text collision.}
 \label{fig:robustness_stress}
 \end{figure}
 
@@ -282,9 +282,9 @@ Table~\ref{tab:robustness_summary} and Fig.~\ref{fig:robustness_stress} report d
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Clinical Degradation} & \textbf{Single Large} & \textbf{MOSAIC-Med} & \textbf{$\Delta$} & \textbf{Holm $p$} \\
+\textbf{Perturbation Condition} & \textbf{Single Large} & \textbf{MOSAIC-Med} & \textbf{$\Delta$} & \textbf{Holm $p$} \\
 \midrule
-Clean Test Baseline           & 0.9059 $\pm$ 0.0010 & \textbf{0.9113 $\pm$ 0.0008} & +0.0054 & $8.44 \times 10^{-5}$ \\
+Clean Baseline                 & 0.9059 $\pm$ 0.0010 & \textbf{0.9113 $\pm$ 0.0008} & +0.0054 & $8.44 \times 10^{-5}$ \\
 EMG Noise ($\sigma=0.15$)     & 0.8872 $\pm$ 0.0014 & \textbf{0.8938 $\pm$ 0.0012} & +0.0066 & $1.23 \times 10^{-4}$ \\
 Baseline Wander               & 0.8998 $\pm$ 0.0012 & \textbf{0.9042 $\pm$ 0.0015} & +0.0044 & $4.63 \times 10^{-3}$ \\
 Precordial Loss (V1--V3)      & 0.8710 $\pm$ 0.0018 & \textbf{0.8791 $\pm$ 0.0016} & +0.0081 & $8.82 \times 10^{-4}$ \\
@@ -296,17 +296,17 @@ Held-Out Site ($s \ne 0$)     & 0.8984 $\pm$ 0.0011 & \textbf{0.9049 $\pm$ 0.000
 \end{ICICtable}
 \end{table}
 
-Across all stress conditions in Table~\ref{tab:robustness_summary} and Fig.~\ref{fig:robustness_stress}, MOSAIC-Med retains significantly higher performance than the monolithic baseline (controlled via Holm-Bonferroni correction across the $m=4$ corruption conditions). Under precordial lead dropout (V1--V3 missing), Single Large drops precipitously to AUROC $0.8710$, whereas MOSAIC-Med retains $0.8791$ ($\Delta = +0.0081$, Holm $p = 8.82 \times 10^{-4}$). In clinical electrocardiography, leads V1--V3 provide the primary vector view of the anterior and septal myocardium; losing them blinds monolithic models to acute anteroseptal MI. In contrast, MOSAIC-Med's diverse sub-networks extract compensatory morphological signatures from remaining limb and lateral leads. Furthermore, under acquisition site shift ($s \ne 0$), MOSAIC-Med achieves AUROC $0.9049 \pm 0.0009$ compared to $0.8984 \pm 0.0011$ ($p = 3.72 \times 10^{-5}$), demonstrating preliminary internal transferability across distinct recording devices within PTB-XL, rather than independent external hospital validation.
+Across all stress conditions in Table~\ref{tab:robustness_summary} and Fig.~\ref{fig:robustness_stress}, MOSAIC-Med retains significantly higher performance than the monolithic baseline (controlled via Holm-Bonferroni correction across the $m=4$ corruption conditions). Under precordial lead dropout (V1--V3 missing), Single Large drops precipitously to AUROC $0.8710$, whereas MOSAIC-Med retains $0.8791$ ($\Delta = +0.0081$, Holm $p = 8.82 \times 10^{-4}$). In 12-lead electrocardiography, leads V1--V3 provide the primary vector view of the anterior and septal myocardium; losing them blinds monolithic models to acute anteroseptal MI. In contrast, MOSAIC-Med's diverse sub-networks extract compensatory morphological signatures from remaining limb and lateral leads. Furthermore, under acquisition site shift ($s \ne 0$), MOSAIC-Med achieves AUROC $0.9049 \pm 0.0009$ compared to $0.8984 \pm 0.0011$ ($p = 3.72 \times 10^{-5}$), demonstrating preliminary internal transferability across distinct recording devices within PTB-XL, rather than independent external hospital validation.
 
 \enlargethispage{\baselineskip}
-\subsection{Selective Classification and Clinical Abstention}
+\subsection{Selective Classification and Uncertainty Deferral}
 \label{subsec:res_abstention}
 
-Table~\ref{tab:selective_summary} and Fig.~\ref{fig:risk_coverage} evaluate multi-label diagnostic risk as ambiguous cases are deferred based on predictive uncertainty $U(x)$.
+Table~\ref{tab:selective_summary} and Fig.~\ref{fig:risk_coverage} evaluate multi-label diagnostic risk as ambiguous cases are deferred based on predictive uncertainty $U(x)$, evaluating error reduction on retained records rather than overall cohort discrimination.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.92\columnwidth, height=4.6cm, keepaspectratio]{figures/risk_coverage.png}
+\includegraphics[width=0.92\columnwidth, height=3.9cm, keepaspectratio]{figures/risk_coverage.png}
 \caption{Selective classification multi-label Hamming risk as a function of cohort coverage retention ($c \in [80\%, 100\%]$). Deferring the $10\%$ most ambiguous records ($c=90\%$) achieves a statistically significant $4.18\%$ relative risk reduction.}
 \label{fig:risk_coverage}
 \end{figure}
@@ -337,7 +337,7 @@ As shown in Table~\ref{tab:selective_summary} and plotted in Fig.~\ref{fig:risk_
 \subsection{Loss-Term Regularization Ablation}
 \label{subsec:res_ablation}
 
-Table~\ref{tab:loss_ablation} presents the factorial ablation of router regularization across three seeds (seeds 42, 43, 44) on frozen expert backbones with cached logits. Because the ablation specifically evaluates isolated router objective terms on frozen backbones over three seeds, baseline Uniform Average metrics ($0.9108 \pm 0.0009$ AUROC, $0.7749 \pm 0.0013$ AUPRC) reflect this 3-seed protocol, whereas the end-to-end multi-seed evaluations in Tables~\ref{tab:matched_control} and~\ref{tab:routing_summary} utilize five independent seeds (42--46). Comparisons against baseline Uniform Average ($m=4$) are controlled using Holm-Bonferroni correction.
+Table~\ref{tab:loss_ablation} presents the factorial ablation of router regularization across three seeds (42--44) on frozen expert backbones with cached logits. Metrics for baseline Uniform Average ($0.9108 \pm 0.0009$ AUROC, $0.7749 \pm 0.0013$ AUPRC) reflect this 3-seed protocol on frozen backbones, whereas end-to-end evaluations in Tables~\ref{tab:matched_control} and~\ref{tab:routing_summary} utilize five independent seeds (42--46). Comparisons against baseline Uniform Average ($m=4$) are controlled using Holm-Bonferroni correction.
 
 \begin{table}[t]
 \caption{Loss-Term Regularization Ablation Across 3 Seeds}
@@ -360,43 +360,41 @@ Table~\ref{tab:loss_ablation} presents the factorial ablation of router regulari
 \end{ICICtable}
 \end{table}
 
-Diversity entropy regularization ($\mathcal{L}_{\text{div}}$) recovers AUROC to $0.9088 \pm 0.0015$. The complete formulation ($\mathcal{L}_{\text{diag}} + \mathcal{L}_{\text{div}} + \mathcal{L}_{\text{fail}}$) achieves $0.9090 \pm 0.0013$ (Brier 0.0879), regularizing gating dynamics without manual tuning of the thresholds. Multiplicity (0.9059), diversity (0.9110), routing (0.9113), and 90\% selective deferral successively improve diagnostic discrimination starting from SingleLarge (0.9059).
+Diversity entropy regularization ($\mathcal{L}_{\text{div}}$) recovers AUROC to $0.9088 \pm 0.0015$; the complete formulation ($\mathcal{L}_{\text{diag}} + \mathcal{L}_{\text{div}} + \mathcal{L}_{\text{fail}}$) achieves $0.9090 \pm 0.0013$, regularizing gating dynamics. Multiplicity ($K=2$: 0.9085), diversity (0.9110), and routing (0.9113) enhance discrimination relative to SingleLarge (0.9059), while 90\% selective deferral reduces retained Hamming risk ($10.83\% \to 10.37\%$).
 
-\enlargethispage{4\baselineskip}
+\enlargethispage{5\baselineskip}
 \section{Discussion}
 \label{sec:discussion}
 
 \subsection{Evaluation of Formal Hypotheses}
 \label{subsec:disc_hypotheses}
 
-Under an approximately fixed parameter budget, capacity splitting acts as a variance-reduction regularizer: Multiplicity Superiority (H1) is validated as dividing fixed capacity into $K = 2, 4$ experts statistically outperforms monolithic scale ($K = 1$, DeLong $p = 3.63 \times 10^{-4}$)~\cite{lakshminarayanan2017simple, chen2025budget}. In \textit{Architectural Diversity (H2)}, evaluating heterogeneous against homogeneous ensembles shows a consistent improvement trend (Holm $p = 0.058$) in discrimination and calibration (Brier 0.0867 vs 0.0881) by reducing CKA similarity (0.9008 vs 0.9458)~\cite{zhou2025diversity}, though it does not reach significance at $\alpha = 0.05$. For \textit{Sparse Adaptive Routing (H3)}, Top-2 dynamic routing achieves empirical discrimination comparable to dense routing ($0.9113$ vs $0.9110$, $p = 0.42$) while reducing FLOPs by 28.2\% relative to dense ensembling (297.8 vs 414.9 MFLOPs). Finally, under \textit{Selective Deferral (H4)}, combining predictive entropy and ensemble disagreement yields well-ordered uncertainty, achieving a $4.18\%$ relative risk reduction at 90\% coverage ($p = 0.0093$)~\cite{kompa2024second, argha2025selective}.
+Under an approximately fixed parameter budget, capacity splitting acts as a variance-reduction regularizer: Multiplicity Superiority (H1) is validated as dividing fixed capacity into $K = 2, 4$ experts statistically outperforms monolithic scale ($K = 1$, DeLong $p = 3.63 \times 10^{-4}$)~\cite{lakshminarayanan2017simple, chen2025budget}. In \textit{Architectural Diversity (H2)}, evaluating heterogeneous against homogeneous ensembles shows a consistent improvement trend (Holm $p = 0.058$) in discrimination and calibration (Brier 0.0867 vs 0.0881) by reducing CKA similarity (0.9008 vs 0.9458)~\cite{zhou2025diversity}, though it does not reach significance at $\alpha = 0.05$. For \textit{Sparse Adaptive Routing (H3)}, Top-2 routing achieves competitive discrimination ($0.9113 \pm 0.0008$ vs. dense routing $0.9118 \pm 0.0004$; paired $p = 0.163$) while cutting FLOPs by 28.2\% relative to dense ensembling (297.8 vs 414.9 MFLOPs), without implying formal statistical equivalence. Finally, under \textit{Selective Deferral (H4)}, combining predictive entropy and ensemble disagreement yields well-ordered uncertainty, achieving a $4.18\%$ relative risk reduction in retained Hamming error at 90\% coverage ($p = 0.0093$)~\cite{kompa2024second, argha2025selective}.
 
 \subsection{Negative Results and Theoretical Boundaries}
 \label{subsec:disc_negative}
 
-\textbf{Capacity Under-Allocation and Gating Collapse:} With only $\sim$125K parameters per expert ($K=16$), sub-networks lack capacity for multi-lead morphology extraction, tripling latency to 6.78~ms. Furthermore, training the router using diagnostic loss alone results in gating collapse into a single expert ($0.9049$ vs $0.9108$), demonstrating that diversity regularization is essential.
+\textbf{Capacity Under-Allocation and Gating Collapse:} At $K=16$ ($\sim$125K parameters/expert), sub-networks lack capacity for multi-lead extraction, tripling latency to 6.78~ms. Furthermore, training the router using diagnostic loss alone results in gating collapse into a single expert ($0.9049$ vs $0.9108$), demonstrating that diversity regularization is essential.
 
-\subsection{Clinical Translation and Limitations}
+\subsection{Practical Deployment Implications and Limitations}
 \label{subsec:disc_translation_limitations}
 
-For memory-constrained monitors, Top-2 sparse routing reduces inference FLOPs by $28.2\%$ relative to dense ensembling, while uncertainty deferral enables identifying ambiguous tracings for potential clinician overread in retrospective evaluation. These technical benchmarks demonstrate algorithmic feasibility rather than clinical efficacy or improved patient outcomes.
+For resource-constrained devices, Top-2 sparse routing cuts inference FLOPs by $28.2\%$ relative to dense ensembling, while uncertainty deferral isolates ambiguous tracings for potential clinician overread in retrospective evaluation. These benchmarks demonstrate technical feasibility rather than clinical efficacy or improved patient outcomes. \textbf{Limitations:} Assessments were conducted under edge parameter budgets ($\sim$2.0M parameters); evaluating foundation scales is left for future work~\cite{li2024ecgfounder, xu2026ecgmoe}. Parameter budgets are matched across arms, but inference compute is not: Top-2 routing requires 297.8 MFLOPs versus 123.9 for the monolithic baseline. Crucially, the site-shift evaluation uses an internal held-out subset of PTB-XL ($s \ne 0$) and does not substitute for independent external multi-hospital validation.
 
-\textbf{Limitations:} Assessments were conducted under edge parameter budgets ($\sim$2.0M parameters), and evaluating multiplicity at foundation scales is left for future work~\cite{li2024ecgfounder, xu2026ecgmoe}. Parameter budgets are matched across arms, but inference compute is not: the Top-2 router requires 297.8 MFLOPs versus 123.9 for the monolithic baseline. The site-shift evaluation uses an internal held-out subset of PTB-XL ($s \ne 0$) and does not substitute for independent external multi-hospital validation.
-
-\enlargethispage{6.5\baselineskip}
+\enlargethispage{9\baselineskip}
 \section{Conclusion}
 \label{sec:conclusion}
 
-This study demonstrates that fixed-budget model multiplicity statistically outperforms monolithic scale in 12-lead ECG diagnosis, while architectural diversity exhibits a positive descriptive improvement trend ($p = 0.058$). Distributing a $\sim$2.0M parameter budget across specialized compact networks provides superior discrimination, calibration, and noise resilience over an equivalent monolithic baseline. A four-expert heterogeneous ensemble with sparse Top-2 routing and selective abstention provides an effective framework balancing edge efficiency and diagnostic reliability.
+This study demonstrates that fixed-budget model multiplicity statistically outperforms monolithic scale in 12-lead ECG diagnosis, while architectural diversity exhibits a consistent descriptive improvement trend ($p = 0.058$). Distributing a $\sim$2.0M parameter budget across compact specialized networks balances edge efficiency and diagnostic reliability.
 
 \vspace{-4pt}
 \ICICComponentHeading{Data and Code Availability}
 \vspace{-4pt}
-{\footnotesize The PTB-XL dataset is publicly available at \url{https://physionet.org/content/ptb-xl/1.0.3/}~\cite{wagner2020ptbxl}. All experiment code and reproduction scripts are available at \url{https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med}.\par}
+{\scriptsize The PTB-XL dataset is publicly available at \url{https://physionet.org/content/ptb-xl/1.0.3/}~\cite{wagner2020ptbxl}. Experiment code and reproduction scripts are available at \url{https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med}.\par}
 \vspace{-4pt}
 
 {\scriptsize
-\def\IEEEbibitemsep{0pt plus 0.5pt}
+\def\IEEEbibitemsep{-0.5pt plus 0.5pt}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 }

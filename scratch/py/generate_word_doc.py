@@ -111,16 +111,16 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     
     abstract_text = (
         "Deep neural networks for physiological signal classification predominantly rely on monolithic parameter scaling, "
-        "which incurs high computational latency and uncalibrated overconfidence under clinical noise. In resource-constrained "
+        "which incurs high computational latency and uncalibrated overconfidence under simulated signal stress. In resource-constrained "
         "12-lead electrocardiogram (ECG) multi-label diagnosis across 21,799 PTB-XL records, this study investigates distributing "
         "an invariant ~2.0M parameter budget among compact specialized networks (MOSAIC-Med). The multiplicity hypothesis (H1) "
         "is validated: split architectures (K=2: AUROC 0.9085 ± 0.0007; K=4: 0.9084 ± 0.0008) statistically surpass the monolithic "
         "baseline (K=1: 0.9059 ± 0.0010, DeLong p = 3.63 × 10^-4). However, extreme over-fragmentation at K=16 degrades AUROC to "
         "0.9048 and triples latency. Architectural diversity (H2) yields a consistent descriptive improvement trend (0.9110 ± 0.0006; "
         "Holm p = 0.058) with lower CKA similarity (0.9008 vs 0.9458), but is not statistically significant at alpha = 0.05. "
-        "Learned Top-2 sparse routing (H3) achieves diagnostic parity (0.9113) while reducing computation by 28.2% relative to dense "
-        "ensembling (297.8 vs 414.9 MFLOPs). Selective abstention (H4) on the 10% most uncertain records achieves a 4.18% relative "
-        "risk reduction (p = 0.0093). Factorial ablation confirms diversity regularization prevents router collapse (0.9088 vs 0.9049)."
+        "Learned Top-2 sparse routing (H3) achieves competitive discrimination (0.9113) while reducing computation by 28.2% relative to dense "
+        "ensembling (297.8 vs 414.9 MFLOPs). Selective abstention (H4) on the 10% most uncertain records reduces multi-label Hamming risk "
+        "among retained records by 4.18% (p = 0.0093). Factorial ablation confirms diversity regularization prevents router collapse (0.9088 vs 0.9049)."
     )
     r_abs = p_abs.add_run(abstract_text)
     r_abs.font.size = Pt(9)
@@ -322,11 +322,11 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     
     add_tbl(
         "TABLE I. Cohort Demographics and Diagnostic Prevalence on PTB-XL",
-        ["Split Partition", "Records", "Patients", "Age (SD)", "Female (%)"],
+        ["Split Partition", "Records", "Patients", "Age (SD)*", "Female (%)"],
         [
-            ["Training (Folds 1–8)", "17,418", "15,023", "62.3 ± 31.4", "47.8%"],
-            ["Validation (Fold 9)", "2,183", "1,942", "64.5 ± 37.1", "48.1%"],
-            ["Test (Fold 10)", "2,198", "1,904", "64.4 ± 34.2", "48.5%"]
+            ["Training (Folds 1–8)", "17,418", "15,023", "59.4 ± 16.6", "47.8%"],
+            ["Validation (Fold 9)", "2,183", "1,942", "59.9 ± 17.1", "48.1%"],
+            ["Test (Fold 10)", "2,198", "1,904", "60.7 ± 17.3", "48.5%"]
         ],
         [Inches(2.2), Inches(1.1), Inches(1.1), Inches(1.3), Inches(1.1)]
     )
@@ -334,11 +334,12 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     add_p(
         "As documented in Table I and illustrated in Boxes 1–5 of Fig. 1, records are partitioned using the official "
         "patient-stratified 10-fold split: Folds 1–8 for training, Fold 9 for validation, and Fold 10 strictly held out "
-        "for final testing, guaranteeing zero patient identity leakage [5]. Diagnostic classification is framed as multi-label "
-        "binary prediction across five clinical superclasses: Normal ECG (NORM), Myocardial Infarction (MI), ST/T Changes (STTC), "
-        "Conduction Defect (CD), and Hypertrophy (HYP). Let x in R^{C x L} denote an input 12-lead recording (C = 12, L = 1000), "
-        "and let y in {0, 1}^M denote the binary target vector for M = 5 superclasses. All signals are zero-mean unit-variance "
-        "normalized per lead: x_c' = (x_c - mu_c) / sigma_c."
+        "for final testing, guaranteeing zero patient identity leakage [5]. Reported ages exclude 293 records with legacy "
+        "sentinel age 300 (N=21,506 valid), which otherwise inflate raw metadata SDs to 31.4, 37.1, and 34.2 years, respectively. "
+        "Diagnostic classification is framed as multi-label binary prediction across five clinical superclasses: Normal ECG (NORM), "
+        "Myocardial Infarction (MI), ST/T Changes (STTC), Conduction Defect (CD), and Hypertrophy (HYP). Let x in R^{C x L} denote an "
+        "input 12-lead recording (C = 12, L = 1000), and let y in {0, 1}^M denote the binary target vector for M = 5 superclasses. "
+        "All signals are standardized instance-by-instance across time (L = 1000) independently per lead."
     )
     
     add_h2("B. Multiplicity and Architectural Diversity")
@@ -456,7 +457,7 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     )
     
     add_p(
-        "The underlying mathematical mechanism driving this gain is ensemble variance reduction under fixed aggregate compute: "
+        "The underlying mathematical mechanism driving this gain is ensemble variance reduction under an approximately fixed aggregate parameter budget: "
         "intermediate capacity splitting (K=2, 4) reduces idiosyncratic estimation error across diverse patient morphologies "
         "without reducing individual network capacity below the minimum threshold required to extract morphological 12-lead "
         "features. However, scaling to K=16 triggers an acute capacity over-fragmentation boundary. When the 2.0M budget is "
@@ -528,46 +529,45 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     )
     
     add_p(
-        "The dense learned Adaptive Router (16K parameters) performs at peak absolute discrimination (0.9118 ± 0.0004, "
-        "Holm p = 5.27 × 10^-5) at 414.9 MFLOPs. Importantly, the proposed Sparse Top-2 Router still maintains this "
-        "discrimination (0.9113 ± 0.0008, Holm p = 5.07 × 10^-5) but with just two experts being executed per patient "
-        "tracing, which reduces inference compute to 297.8 MFLOPs (down 28.2% from dense routing)."
+        "The dense learned Adaptive Router (16K parameters) performs at peak discrimination (0.9118 ± 0.0004, "
+        "Holm p = 5.27 × 10^-5) at 414.9 MFLOPs. The Sparse Top-2 Router achieves empirical discrimination of 0.9113 ± 0.0008 "
+        "(Holm p = 5.07 × 10^-5 vs. monolithic) with two active experts per tracing, reducing dynamic inference compute to 297.8 MFLOPs "
+        "(a 28.2% reduction relative to dense routing; 2.40x monolithic FLOPs). Across training seeds, the minor numerical difference between "
+        "dense routing and sparse Top-2 (0.9118 vs. 0.9113, paired p = 0.163) is not statistically significant, though this descriptive proximity "
+        "does not establish formal equivalence."
     )
     
     add_p(
-        "The router specializes in medically informed cardiac pathologies: For Conduction Defects (CD) and Hypertrophy (HYP), "
-        "the majority of the router sends the TCN-1D and MultiScale-CNN (w_k > 0.30), which use dilated convolutions to "
-        "assess the PR interval, bundle branch blocks and the ventricular voltage criteria, respectively."
+        "The router specializes in cardiac pathologies: Conduction Defects (CD) and Hypertrophy (HYP) predominantly activate "
+        "TCN-1D and MultiScale-CNN (w_k > 0.30), leveraging dilated convolutions for PR intervals, bundle branch blocks, and ventricular voltage criteria."
     )
     
     add_p(
-        "On the other hand, ResNet-1D and ConvAttention-1D have dominant gating weights (w_k > 0.28) thanks to their particular "
-        "focus on localized ST-segment elevations and multi-lead reciprocal depression in the case of MI and ST/T changes (STTC). "
-        "Two lowest-relevance models are dynamically removed for each patient, without loss of diagnostic information, and "
-        "without unnecessary computation."
+        "Conversely, ResNet-1D and ConvAttention-1D exhibit dominant gating weights (w_k > 0.28) for localized ST-elevations and reciprocal depression "
+        "in MI and STTC. Two lowest-relevance models are dynamically bypassed per patient, maintaining discrimination (0.9113) close to dense 4-expert routing (0.9118)."
     )
     
-    add_h2("D. Clinical Robustness Under Degradation and Domain Shift")
+    add_h2("D. Robustness Under Simulated Stress Tests and Internal Domain Shift")
     add_p(
-        "Table V and Fig. 3 report diagnostic retention across five clinical stress tests and real-world domain "
+        "Table V and Fig. 3 report diagnostic retention across five predefined simulated stress tests and internal domain "
         "shift across all five random seeds."
     )
     
     add_fig(
         "latex/figures/robustness_stress.png",
-        "Fig. 3. Diagnostic retention under real-world clinical corruptions and site domain shift across five seeds (mean ± SD). Staggered percentage annotations indicate macro AUROC retention relative to clean baseline without text collision."
+        "Fig. 3. Diagnostic retention under predefined simulated stress tests and internal site domain shift across five seeds (mean ± SD). Staggered percentage annotations indicate macro AUROC retention relative to clean baseline without text collision."
     )
     
     add_tbl(
         "TABLE V. Robustness Stress Testing Across 5 Seeds",
-        ["Clinical Degradation", "Single Large", "MOSAIC-Med", "Δ", "Holm p"],
+        ["Perturbation Condition", "Single Large", "MOSAIC-Med", "Δ", "Holm p"],
         [
-            ["Clean Test Baseline", "0.9059 ± 0.0010", "0.9113 ± 0.0008", "+0.0054", "8.44 × 10^-5"],
+            ["Clean Baseline", "0.9059 ± 0.0010", "0.9113 ± 0.0008", "+0.0054", "8.44 × 10^-5"],
             ["EMG Noise (σ=0.15)", "0.8872 ± 0.0014", "0.8938 ± 0.0012", "+0.0066", "1.23 × 10^-4"],
             ["Baseline Wander", "0.8998 ± 0.0012", "0.9042 ± 0.0015", "+0.0044", "4.63 × 10^-3"],
             ["Precordial Loss (V1–V3)", "0.8710 ± 0.0018", "0.8791 ± 0.0016", "+0.0081", "8.82 × 10^-4"],
             ["Limb Loss (I–III)", "0.8841 ± 0.0015", "0.8920 ± 0.0014", "+0.0079", "8.82 × 10^-4"],
-            ["External Site (s != 0)", "0.8984 ± 0.0011", "0.9049 ± 0.0009", "+0.0065", "3.72 × 10^-5"]
+            ["Held-Out Site (s != 0)", "0.8984 ± 0.0011", "0.9049 ± 0.0009", "+0.0065", "3.72 × 10^-5"]
         ],
         [Inches(2.2), Inches(1.3), Inches(1.3), Inches(0.9), Inches(1.1)]
     )
@@ -637,9 +637,9 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     add_p(
         "With diversity entropy regularization (L_div) it is possible to recover the AUROC to 0.9088 ± 0.0015, which "
         "introduces an exploratory balance. The complete formulation (L_diag + L_div + L_fail) gets 0.9090 ± 0.0013 "
-        "(Brier 0.0879), regularizing gating dynamics without manual tuning of the thresholds. Multiplicity (0.9059), "
-        "diversity (0.9110), routing (0.9113), and 90% selective deferral successively improve diagnostic discrimination "
-        "starting from SingleLarge (0.9059)."
+        "(Brier 0.0879), regularizing gating dynamics without manual tuning of the thresholds. Multiplicity (K=2: 0.9085), "
+        "diversity (0.9110), and routing (0.9113) enhance discrimination relative to SingleLarge (0.9059), while 90% selective "
+        "deferral reduces retained Hamming risk (10.83% -> 10.37%)."
     )
 
     # =========================================================================
@@ -653,27 +653,27 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
         "Superiority (H1) is validated as dividing fixed capacity into K = 2, 4 experts statistically outperforms monolithic scale (K = 1, DeLong p = 3.63 × 10^-4) [1, 12]. "
         "In Architectural Diversity (H2), evaluating heterogeneous against homogeneous ensembles shows a consistent improvement trend (Holm p = 0.058) in discrimination "
         "and calibration (Brier 0.0867 vs 0.0881) by reducing CKA similarity (0.9008 vs 0.9458) [14], though it does not reach statistical significance at alpha = 0.05. "
-        "For Sparse Adaptive Routing (H3), Top-2 dynamic routing achieves empirical discrimination comparable to dense routing (0.9113 vs 0.9110, p = 0.42) while reducing "
-        "FLOPs by 28.2% relative to dense ensembling (297.8 vs 414.9 MFLOPs). Finally, under Selective Deferral (H4), combining predictive entropy and ensemble disagreement "
-        "yields well-ordered uncertainty, achieving a 4.18% relative risk reduction at 90% coverage (p = 0.0093) [8, 11]."
+        "For Sparse Adaptive Routing (H3), Top-2 dynamic routing achieves competitive discrimination (0.9113 ± 0.0008 vs. dense routing 0.9118 ± 0.0004; paired p = 0.163) while "
+        "reducing FLOPs by 28.2% relative to dense ensembling (297.8 vs 414.9 MFLOPs), without implying formal statistical equivalence. Finally, under Selective Deferral (H4), "
+        "combining predictive entropy and ensemble disagreement yields well-ordered uncertainty, achieving a 4.18% relative risk reduction in retained Hamming error at 90% coverage (p = 0.0093) [8, 11]."
     )
     
     add_h2("B. Negative Results and Theoretical Boundaries")
     add_p(
-        "Capacity Under-Allocation and Gating Collapse: With only ~125K parameters per expert (K = 16), sub-networks lack capacity for multi-lead morphology extraction, "
+        "Capacity Under-Allocation and Gating Collapse: At K = 16 (~125K parameters/expert), sub-networks lack capacity for multi-lead morphology extraction, "
         "tripling latency to 6.78 ms. Furthermore, training the router using diagnostic loss alone results in gating collapse into a single expert (0.9049 vs 0.9108), "
         "demonstrating that diversity regularization is essential."
     )
     
-    add_h2("C. Clinical Translation and Limitations")
+    add_h2("C. Practical Deployment Implications and Limitations")
     add_p(
-        "For memory-constrained monitors, Top-2 sparse routing reduces inference FLOPs by 28.2% relative to dense ensembling, while uncertainty deferral enables identifying "
-        "ambiguous tracings for potential clinician overread in retrospective evaluation. These technical benchmarks demonstrate algorithmic feasibility rather than clinical "
+        "For resource-constrained devices, Top-2 sparse routing cuts inference FLOPs by 28.2% relative to dense ensembling, while uncertainty deferral isolates "
+        "ambiguous tracings for potential clinician overread in retrospective evaluation. These benchmarks demonstrate technical feasibility rather than clinical "
         "efficacy or improved patient outcomes."
     )
     add_p(
         "Limitations: Assessments were conducted under edge parameter budgets (~2.0M parameters), and evaluating multiplicity at foundation scales is left for future work [9, 18]. "
-        "Parameter budgets are matched across arms, but inference compute is not: the Top-2 router requires 297.8 MFLOPs versus 123.9 for the monolithic baseline. The site-shift "
+        "Parameter budgets are matched across arms, but inference compute is not: the Top-2 router requires 297.8 MFLOPs versus 123.9 for the monolithic baseline. Crucially, the site-shift "
         "evaluation uses an internal held-out subset of PTB-XL (s != 0) and does not substitute for independent external multi-hospital validation."
     )
 

@@ -90,3 +90,45 @@ Reference file: `results/tables/loss_ablation_summary.csv`
 | 5. All Terms | $0.9090 \pm 0.0013$ | $0.9090 \pm 0.0013$ | $0.0879$ | $0.0879$ | $0.2580$ | $0.25798$ |
 
 **Status**: 100% Exact Match across all metrics and statistical p-values.
+
+---
+
+## 7. Table I: Cohort Demographics and Age Standard Deviation Reconciliation
+Reference file: `ptbxl/ptbxl_database.csv`
+
+| Partition | Records | Patients | Raw Uncleaned Age (SD) | Cleaned Valid Age (SD) | Sentinel Records (Age=300) |
+|---|---|---|---|---|---|
+| Training (Folds 1–8) | 17,418 | 15,023 | $62.3 \pm 31.4$ | $59.4 \pm 16.6$ | 217 |
+| Validation (Fold 9) | 2,183 | 1,942 | $64.5 \pm 37.1$ | $59.9 \pm 17.1$ | 42 |
+| Test (Fold 10) | 2,198 | 1,904 | $64.4 \pm 34.2$ | $60.7 \pm 17.3$ | 34 |
+| **Total Cohort** | **21,799** | **18,869** | **$62.8 \pm 32.3$** | **$59.5 \pm 16.8$** | **293** |
+
+**Clarification & Resolution**:
+- In the raw PTB-XL metadata, 293 recordings carry a legacy sentinel code of `age = 300.0` (used by recording devices or de-identification for missing/unknown age).
+- Computing sample standard deviations on the uncleaned raw metadata yields the inflated figures ($31.4$, $37.1$, and $34.2$ years).
+- Excluding these 293 sentinel records yields true physiological ages: $59.4 \pm 16.6$ (Train), $59.9 \pm 17.1$ (Val), and $60.7 \pm 17.3$ (Test). Table I reports the cleaned statistics with explicit documentation of the 293 sentinel records.
+
+---
+
+## 8. Adaptive Routing Comparison & Statistical Testing Audit
+Reference files: `results/tables/routing_multiseed_summary.csv`, `results/tables/routing_per_seed.csv`
+
+| Strategy | Active Experts | MFLOPs | Macro AUROC (Mean $\pm$ SD) | Paired $t$-test vs Dense | Welch $t$-test vs Dense | Paired $t$-test vs Top-2 |
+|---|---|---|---|---|---|---|
+| Dense Learned Router | 4.0 | 414.9 | $0.9118 \pm 0.0004$ | — | — | $p = 0.163$ |
+| MOSAIC-Med Sparse Top-2 | 2.0 | 297.8 | $0.9113 \pm 0.0008$ | $p = 0.163$ | $p = 0.252$ | — |
+| Uniform Average | 4.0 | 413.7 | $0.9110 \pm 0.0007$ | $p = 0.063$ | $p = 0.076$ | $p = 0.574$ |
+| Single Large (Monolithic) | 1.0 | 123.9 | $0.9059 \pm 0.0010$ | $p = 4.13 \times 10^{-5}$ | $p = 4.13 \times 10^{-5}$ | $p = 1.69 \times 10^{-5}$ |
+
+**Clarification & Resolution**:
+- An earlier draft discussion incorrectly juxtaposed $0.9113$ against $0.9110$ while labeling it dense routing and citing a spurious $p = 0.42$.
+- The actual empirical values are: Dense Learned Router $= 0.9118 \pm 0.0004$, Sparse Top-2 $= 0.9113 \pm 0.0008$, and Uniform Average $= 0.9110 \pm 0.0007$.
+- Across the five training seeds, the minor numerical difference between Dense Learned Router and Sparse Top-2 ($0.9118$ vs $0.9113$) is not statistically significant (paired $t$-test $p = 0.163$, Welch $p = 0.252$).
+- The spurious $p = 0.42$ has been completely removed from the manuscript, and text claims have been adjusted to explicitly avoid implying formal statistical equivalence between dense and sparse routing.
+
+---
+
+## 9. Reframing of Selective Classification
+- Selective classification with uncertainty-triggered deferral was clarified: deferring the $10\%$ most ambiguous records at $c=90\%$ reduces multi-label Hamming risk among retained records ($10.83\% \to 10.37\%$, a verified $4.18\% \pm 2.02\%$ relative reduction across seeds, Holm $p = 9.34 \times 10^{-3}$).
+- It is explicitly documented that this mechanism reduces diagnostic error on the retained cohort rather than providing an incremental macro-AUROC increase on the complete cohort.
+
