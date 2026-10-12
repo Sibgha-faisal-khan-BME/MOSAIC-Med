@@ -1,0 +1,223 @@
+
+=== Page 1 ===
+MOSAIC-Med: Research Proposal
+Testing Whether Multiple Small Neural Networks Can Outperform One Large Neural
+Network for Healthcare Diagnosis Under Fixed Resource Budgets
+Research concept: A parameter- and compute-controlled study of model multiplicity, architectural diversity, adaptive
+expert routing, uncertainty-triggered computation, and robustness in medical diagnosis.
+Important novelty principle: The project should not claim that ensembles, mixture-of-experts, diversity regularization, or dynamic
+inference are individually new. The proposed contribution is their integration into a controlled scientific framework that asks how a fixed
+neural-network capacity budget should be distributed among one large model versus multiple specialized small models, and whether
+adaptive collaboration improves clinical robustness and efficiency.
+1. Problem Statement
+Modern medical AI often follows a scaling strategy: increase the size and capacity of a single neural network to
+improve predictive performance. However, a separate line of machine-learning research has shown that splitting a
+fixed parameter budget across multiple smaller models can sometimes outperform a single model with the same total
+parameter count. Whether this phenomenon transfers reliably to healthcare neural networks—and under which
+conditions—remains insufficiently characterized.
+Healthcare provides an especially demanding setting because predictive performance is not the only requirement.
+Models must also be calibrated, robust to distribution shift, resilient to noisy or missing measurements, computationally
+efficient, and capable of identifying cases for which automated prediction is uncertain.
+A simple comparison of 'two small networks versus one large network' would not be sufficiently novel because
+ensemble learning and mixture-of-experts approaches are established. The research problem is therefore reformulated
+as a controlled investigation of model multiplicity versus model scale, followed by a new adaptive framework in
+which multiple compact experts develop complementary representations, are selectively activated, and can escalate
+difficult cases to additional experts.
+Core research question: Under an equal total parameter and computational budget, can a population of
+heterogeneous small neural networks provide superior diagnostic performance, calibration, robustness, and resource
+efficiency compared with a single large neural network?
+2. Research Objectives
+• Quantify the effect of dividing a fixed neural-network capacity budget among 1, 2, 4, 8, and potentially 16 models.
+• Determine whether heterogeneous architectures provide advantages over homogeneous small-model populations.
+• Develop an adaptive expert-routing mechanism that selects only the experts relevant to an individual patient.
+• Introduce diversity control so that experts learn complementary rather than redundant representations.
+• Develop uncertainty-triggered escalation, allowing additional experts to be activated for difficult cases.
+• Evaluate robustness to noise, missing inputs, and external/distribution-shift data.
+• Compare diagnostic utility against parameter count, FLOPs, latency, memory, and average number of active experts.
+3. Proposed Solution: MOSAIC-Med
+MOSAIC-Med (working name: Model Splitting with Adaptive, Specialized, Inhibitory and Collaborative Experts for
+Medical AI) is a population-based neural architecture designed to investigate whether model diversity can substitute for
+individual model scale.
+The system contains multiple compact experts. Rather than forcing every expert to process every case and simply
+averaging their outputs, a learned router estimates which experts are useful for a particular patient. A diversity
+mechanism discourages unnecessary representational duplication, while an uncertainty mechanism can activate
+additional experts when the initial prediction is unreliable.
+
+=== Page 2 ===
+Component
+Purpose
+Expert population
+Multiple compact neural networks whose combined parameter count is controlled.
+Heterogeneous inductive biases
+Use complementary architectures/representations rather than identical copies.
+Adaptive router
+Selects or weights experts on a patient-specific basis.
+Diversity regularization
+Reduces harmful redundancy while preserving predictive performance.
+Failure-aware specialization
+Encourages complementary strengths based on observed error patterns.
+Uncertainty-triggered escalation
+Activates additional experts only when confidence/calibration criteria indicate that
+more computation is justified.
+Abstention pathway
+Allows the system to flag persistently uncertain cases for human review instead of
+forcing a diagnosis.
+4. Proposed Experimental Methodology
+4.1 Clinical testbed
+The first implementation is proposed for 12-lead ECG diagnosis using a public dataset such as PTB-XL, with an
+independent external ECG dataset reserved for external validation. The same framework can later be transferred to
+medical imaging or multimodal clinical data. The dataset choice should be finalized after a current literature and
+data-quality review.
+4.2 Fixed-budget experimental design
+Condition
+Number of models
+Approx. size/model
+Total parameter budget
+Large baseline
+1
+32M
+32M
+Split-2
+2
+16M
+32M
+Split-4
+4
+8M
+32M
+Split-8
+8
+4M
+32M
+Split-16
+16
+2M
+32M
+The exact budget should be selected after profiling the dataset and hardware. In addition to parameter matching, a second analysis
+should match or report inference FLOPs/latency so that a parameter advantage is not confused with a compute advantage.
+4.3 Expert diversity
+• Homogeneous condition: all experts use the same architecture.
+• Heterogeneous condition: experts use complementary architectures such as 1D CNN/ResNet, TCN, lightweight
+Transformer, and frequency-domain or multi-scale temporal branches.
+• Representation diversity should be measured rather than assumed.
+4.4 Training objective
+A conceptual objective is: L = Ldiag + λdLdiv + λrLroute + λcLcal + λfLfail.
+Ldiag optimizes diagnostic prediction. Ldiv discourages harmful representation redundancy. Lroute encourages
+sparse and meaningful expert selection. Lcal supports reliable probabilities. Lfail encourages complementary error
+patterns. These terms should be introduced incrementally in ablation experiments rather than assuming that all terms
+improve performance.
+4.5 Patient-adaptive inference
+Stage 1: activate a small number of experts. Stage 2: estimate predictive uncertainty and expert disagreement. Stage
+3: if the case is sufficiently uncertain, activate additional experts. Stage 4: if uncertainty remains above a prespecified
+threshold, abstain and flag the case for human review.
+
+=== Page 3 ===
+This creates an adaptive computation mechanism: easy cases consume less computation, while difficult or
+distribution-shifted cases receive additional model capacity.
+5. Validation Framework
+Domain
+Measures
+Purpose
+Discrimination
+AUROC, AUPRC, sensitivity, specificity, F1,
+balanced accuracy
+Diagnostic performance, including
+class-imbalance-sensitive evaluation.
+Calibration
+Brier score, ECE, reliability diagrams
+Whether predicted probabilities correspond to observed
+risk.
+Uncertainty
+Selective risk, coverage, abstention rate
+Whether uncertainty-based escalation/abstention is
+useful.
+Robustness
+Noise, baseline drift, missing leads/features,
+perturbations
+Sensitivity to realistic data degradation.
+External validity
+Independent external dataset
+Generalization across acquisition/population/domain
+differences.
+Efficiency
+Parameters, FLOPs, latency, peak memory,
+active experts
+Resource cost of the competing strategies.
+Fairness/subgroups
+Performance and calibration by relevant
+documented subgroups
+Identify whether gains are consistent across populations.
+6. Statistical Analysis Plan
+• Primary comparison: compare paired patient-level predictions between the large model and the proposed multi-expert
+system using paired methods appropriate to each metric.
+• AUROC: DeLong's test for correlated ROC curves when comparing predictions on the same test subjects.
+• Binary paired outcomes: McNemar's test for paired classification disagreements at a prespecified operating threshold.
+• Bootstrap confidence intervals: stratified patient-level bootstrap, preferably 2,000–10,000 resamples, for AUROC,
+AUPRC, sensitivity, specificity, F1, Brier score, and differences between systems.
+• Multiple configurations: because 1/2/4/8/16 experts create repeated comparisons, control multiplicity using Holm
+correction or a prespecified hierarchical testing procedure.
+• Multiple random seeds: train each configuration across at least 5 independent seeds. Report mean ± SD and
+confidence intervals across runs, while keeping patient-level test predictions separate from seed-level variability.
+• Repeated-measures analysis: if many configurations and repeated seeds are compared, use a mixed-effects model
+with configuration as a fixed effect and seed/dataset split as appropriate random effects; alternatively use a
+preregistered non-parametric approach.
+• Efficiency: compare latency/FLOPs using paired measurements where possible; report effect sizes and confidence
+intervals rather than only p-values.
+• Effect size: report absolute AUROC/AUPRC differences, calibration differences, relative compute reduction, and
+standardized effect sizes where appropriate.
+• Significance: use a prespecified α (e.g., 0.05), but interpret effect sizes and confidence intervals alongside p-values.
+Statistical significance alone should not determine clinical relevance.
+7. Critical Ablation Studies
+• 1 vs 2 vs 4 vs 8 vs 16 experts at fixed total parameters.
+• Homogeneous vs heterogeneous experts.
+• Simple averaging vs learned fusion vs sparse adaptive routing.
+• Without vs with diversity regularization.
+• Without vs with failure-aware specialization.
+
+=== Page 4 ===
+• Without vs with uncertainty-triggered escalation.
+• Without vs with abstention.
+• Random routing vs learned routing.
+• Parameter-matched vs FLOP-matched comparisons.
+• In-domain test performance vs external-domain performance.
+8. What Would Count as Evidence for the Hypothesis?
+Evidence supporting the hypothesis would be a reproducible improvement of the multi-expert approach over the
+parameter-matched single large network across clinically relevant metrics, with confidence intervals excluding
+negligible effects, and with the advantage remaining after controlling for random seed, compute, and multiple
+comparisons.
+A negative result is also scientifically valuable. If increasing the number of small experts eventually hurts performance,
+the experiments can identify the transition point at which individual expert capacity becomes insufficient. This prevents
+the study from being designed merely to confirm the motivating claim.
+9. Reproducibility and Leakage Controls
+• Split at the patient level, never at the individual ECG/recording level when multiple records from the same patient exist.
+• Keep the external dataset completely untouched during model development.
+• Prespecify primary endpoint, primary comparison, statistical tests, and exclusion criteria before final evaluation.
+• Use identical preprocessing and data augmentation rules across competing model families unless an ablation explicitly
+tests them.
+• Release code, configurations, random seeds, model checkpoints where licensing permits, and exact preprocessing
+steps.
+10. Expected Scientific Contribution
+The project is designed to answer a broader question than whether an ensemble is accurate: how should a fixed
+neural-network capacity budget be distributed between model scale, model multiplicity, diversity, and
+adaptive computation for medical diagnosis?
+A successful outcome would provide an empirical scaling curve across the number of experts, characterize when
+multiplicity helps or hurts, determine whether architectural diversity contributes beyond model count, and test whether
+adaptive activation can convert a many-model system into an efficient patient-specific inference mechanism.
+11. Proposed Paper Structure
+• Introduction — model scaling versus model multiplicity in healthcare.
+• Related work — ensembles, mixture-of-experts, model splitting, diversity, uncertainty, and medical AI robustness.
+• Research questions and hypotheses.
+• MOSAIC-Med architecture and mathematical formulation.
+• Fixed-budget experimental protocol.
+• Results: scaling with number of experts.
+• Ablations: diversity, routing, inhibition, escalation, and abstention.
+• Robustness and external validation.
+• Statistical analysis and efficiency trade-offs.
+• Discussion of when small-model multiplicity can or cannot replace individual model scale.
+
+=== Page 5 ===
+Note on novelty: This document is a research-design proposal, not a guarantee that every individual mechanism is unprecedented.
+Before claiming novelty in a manuscript, conduct a systematic literature search across PubMed, IEEE Xplore, Scopus/Web of Science,
+Google Scholar, and relevant ML proceedings, using combinations of terms such as fixed-budget ensembles, model splitting,
+small-vs-large neural networks, medical mixture-of-experts, diversity regularization, adaptive routing, uncertainty-triggered inference, and
+external medical-domain shift.

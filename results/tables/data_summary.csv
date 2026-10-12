@@ -1,0 +1,6 @@
+class_code,class_name,train_cases,val_cases,test_cases,total_cases,prevalence_pct
+CD,Conduction Disturbance,3907,495,496,4898,22.47%
+HYP,Hypertrophy,2119,268,262,2649,12.15%
+MI,Myocardial Infarction,4379,540,550,5469,25.09%
+NORM,Normal ECG,7596,955,963,9514,43.64%
+STTC,ST/T Changes,4186,528,521,5235,24.01%

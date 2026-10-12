@@ -1,0 +1,346 @@
+\documentclass[tikz,border=12pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows.meta,positioning,fit,backgrounds,calc,decorations.pathreplacing}
+\usepackage{amsmath,amssymb}
+\usepackage{times}
+
+\begin{document}
+\begin{tikzpicture}[
+    font=\small,
+    >=Stealth,
+    node distance=0.5cm and 0.4cm,
+    % Box Styles
+    box/.style={
+        rectangle, 
+        rounded corners=4pt, 
+        draw=#1!70!black, 
+        fill=#1!5, 
+        line width=0.8pt, 
+        inner sep=5pt, 
+        align=center
+    },
+    badge/.style={
+        circle, 
+        fill=#1!80!black, 
+        text=white, 
+        font=\footnotesize\bfseries, 
+        inner sep=1.5pt, 
+        minimum size=14pt
+    },
+    header/.style={
+        font=\footnotesize\bfseries, 
+        text=#1!80!black, 
+        align=center
+    },
+    arr/.style={
+        ->, 
+        line width=1.1pt, 
+        draw=blue!80!black
+    },
+    dasharr/.style={
+        ->, 
+        dashed, 
+        line width=1.1pt, 
+        draw=purple!80!black
+    },
+    groupbox/.style={
+        rectangle, 
+        rounded corners=6pt, 
+        draw=#1!60!black, 
+        fill=#1!2, 
+        line width=0.9pt, 
+        inner sep=8pt
+    }
+]
+
+% =========================================================================
+% TIER 1: DATA PIPELINE (Boxes 1 - 5)
+% =========================================================================
+
+% Box 1: Dataset & Cohort
+\node[box=blue, text width=4.0cm, minimum height=3.6cm] (b1) {
+    \begin{tikzpicture}
+        \node[badge=blue] at (0, 0) {1};
+        \node[header=blue, right=0.15cm of {(0,0)}] {\textbf{Dataset and Cohort}\\\textbf{(PTB-XL)}};
+    \end{tikzpicture}\\[3pt]
+    \footnotesize
+    \textbf{21,799 records} from 18,869 patients\\
+    10\,s, 12-lead ECG (100\,Hz, $L=1000$)\\
+    SCP-ECG clinical statements\\[4pt]
+    \tikz{
+        \draw[blue!60!black, line width=0.5pt] (0,0) -- (0.3,0) -- (0.4,0.3) -- (0.5,-0.2) -- (0.6,0.5) -- (0.7,-0.4) -- (0.8,0.1) -- (1.1,0) -- (1.4,0);
+        \node[font=\tiny, text=gray] at (2.2, 0) {$C=12\text{ leads}$};
+    }
+};
+
+% Box 2: Patient-Stratified Split
+\node[box=teal, text width=4.0cm, minimum height=3.6cm, right=0.35cm of b1] (b2) {
+    \begin{tikzpicture}
+        \node[badge=teal] at (0, 0) {2};
+        \node[header=teal, right=0.15cm of {(0,0)}] {\textbf{Patient-Stratified}\\\textbf{Data Split}};
+    \end{tikzpicture}\\[3pt]
+    \footnotesize
+    \textbf{Official 10-fold split} (zero leakage)\\[2pt]
+    \colorbox{teal!12}{\parbox{3.7cm}{\centering \scriptsize
+        \textbf{Train (Folds 1--8):} 17,411 rec (15,082 pts)\\
+        \textbf{Validation (Fold 9):} 2,183 rec (1,894 pts)\\
+        \textbf{Held-Out Test (Fold 10):} 2,205 rec (1,893 pts)
+    }}
+};
+
+% Box 3: Preprocessing & Normalization
+\node[box=orange, text width=4.0cm, minimum height=3.6cm, right=0.35cm of b2] (b3) {
+    \begin{tikzpicture}
+        \node[badge=orange] at (0, 0) {3};
+        \node[header=orange, right=0.15cm of {(0,0)}] {\textbf{Preprocessing \&}\\\textbf{Normalization}};
+    \end{tikzpicture}\\[3pt]
+    \footnotesize
+    \textbf{Per-lead standardization}\\
+    (zero-mean, unit-variance)\\[3pt]
+    $x_c' = \dfrac{x_c - \mu_c}{\sigma_c}$\\[4pt]
+    \scriptsize $L=1000$ samples (10\,s)
+};
+
+% Box 4: Multi-Label Targets
+\node[box=purple, text width=3.8cm, minimum height=3.6cm, right=0.35cm of b3] (b4) {
+    \begin{tikzpicture}
+        \node[badge=purple] at (0, 0) {4};
+        \node[header=purple, right=0.15cm of {(0,0)}] {\textbf{Multi-Label Targets}\\\textbf{(5 Superclasses)}};
+    \end{tikzpicture}\\[3pt]
+    \scriptsize
+    \tikz{
+        \node[fill=green!20, draw=green!60!black, rounded corners=2pt, font=\tiny\bfseries, inner sep=2pt, minimum width=1.1cm] at (0, 0.8) {NORM};
+        \node[right=0.1cm, font=\tiny] at (0.6, 0.8) {Normal ECG};
+        \node[fill=red!20, draw=red!60!black, rounded corners=2pt, font=\tiny\bfseries, inner sep=2pt, minimum width=1.1cm] at (0, 0.4) {MI};
+        \node[right=0.1cm, font=\tiny] at (0.6, 0.4) {Myocardial Inf.};
+        \node[fill=orange!20, draw=orange!60!black, rounded corners=2pt, font=\tiny\bfseries, inner sep=2pt, minimum width=1.1cm] at (0, 0.0) {STTC};
+        \node[right=0.1cm, font=\tiny] at (0.6, 0.0) {ST/T Changes};
+        \node[fill=teal!20, draw=teal!60!black, rounded corners=2pt, font=\tiny\bfseries, inner sep=2pt, minimum width=1.1cm] at (0, -0.4) {CD};
+        \node[right=0.1cm, font=\tiny] at (0.6, -0.4) {Conduct. Defect};
+        \node[fill=purple!20, draw=purple!60!black, rounded corners=2pt, font=\tiny\bfseries, inner sep=2pt, minimum width=1.1cm] at (0, -0.8) {HYP};
+        \node[right=0.1cm, font=\tiny] at (0.6, -0.8) {Hypertrophy};
+    }
+};
+
+% Box 5: Input Tensor
+\node[box=yellow!70!orange, text width=3.8cm, minimum height=3.6cm, right=0.35cm of b4] (b5) {
+    \begin{tikzpicture}
+        \node[badge=orange] at (0, 0) {5};
+        \node[header=orange!80!black, right=0.15cm of {(0,0)}] {\textbf{Input Tensor}};
+    \end{tikzpicture}\\[4pt]
+    \footnotesize
+    $\mathbf{x} \in \mathbb{R}^{C \times L}$\\[2pt]
+    ($C=12$ leads, $L=1000$)\\[6pt]
+    \tikz{
+        \foreach \y in {0.6, 0.4, 0.2, 0.0, -0.2, -0.4} {
+            \draw[teal!70!black, line width=0.4pt] (0,\y) -- (0.3,\y) -- (0.4,\y+0.08) -- (0.5,\y-0.08) -- (0.6,\y+0.12) -- (0.7,\y-0.10) -- (0.8,\y+0.03) -- (1.5,\y);
+        }
+    }
+};
+
+% Tier 1 Arrows
+\draw[arr] (b1) -- (b2);
+\draw[arr] (b2) -- (b3);
+\draw[arr] (b3) -- (b4);
+\draw[arr] (b4) -- (b5);
+
+% =========================================================================
+% TIER 2: EXPERT ENSEMBLE & GATING (Boxes 6 - 10)
+% =========================================================================
+
+% Box 6: Model Capacity Allocation
+\node[box=cyan, text width=4.0cm, minimum height=4.2cm, below=1.2cm of b1] (b6) {
+    \begin{tikzpicture}
+        \node[badge=cyan] at (0, 0) {6};
+        \node[header=cyan, right=0.15cm of {(0,0)}] {\textbf{Model Capacity}\\\textbf{Allocation}};
+    \end{tikzpicture}\\[4pt]
+    \footnotesize
+    \textbf{Total Budget Constraint:}\\[2pt]
+    $\displaystyle\sum_{k=1}^K |\theta_k| \le B \approx 2.0 \times 10^6$\\[4pt]
+    \colorbox{cyan!10}{\parbox{3.7cm}{\centering \scriptsize
+        \textbf{Homogeneous Allocation:}\\
+        $K=1 \to 2.02\text{M}$ ($W_1=65$)\\
+        $K=2 \to 2.03\text{M}$ ($W_2=46$)\\
+        $K=4 \to 1.98\text{M}$ ($W_4=32$)\\
+        $K=8 \to 2.05\text{M}$ ($W_8=23$)\\
+        $K=16 \to 2.01\text{M}$ ($W_{16}=16$)
+    }}
+};
+
+% Box 7: Heterogeneous Architectures
+\node[box=blue, text width=4.3cm, minimum height=4.2cm, right=0.35cm of b6] (b7) {
+    \begin{tikzpicture}
+        \node[badge=blue] at (0, 0) {7};
+        \node[header=blue, right=0.15cm of {(0,0)}] {\textbf{Heterogeneous Expert}\\\textbf{Architectures ($K=4$)}};
+    \end{tikzpicture}\\[3pt]
+    \scriptsize
+    \textbf{ResNet-1D} (493,893 params)\\
+    \textbullet~3 residual stages, skip connections\\[2pt]
+    \textbf{MultiScale-CNN} (508,909 params)\\
+    \textbullet~Parallel kernels $\{3, 7, 15, 31\}$\\[2pt]
+    \textbf{TCN-1D} (490,661 params)\\
+    \textbullet~Dilated causal convs $d \in \{1, 2, 4, 8\}$\\[2pt]
+    \textbf{ConvAttention-1D} (500,225 params)\\
+    \textbullet~Stem downsampling + 2-layer Transf.\\[2pt]
+    \textbf{Sum = 1,993,688 params} ($+0.92\%$)
+};
+
+% Box 8: Feature Representations
+\node[box=purple, text width=3.7cm, minimum height=4.2cm, right=0.35cm of b7] (b8) {
+    \begin{tikzpicture}
+        \node[badge=purple] at (0, 0) {8};
+        \node[header=purple, right=0.15cm of {(0,0)}] {\textbf{Expert Feature}\\\textbf{Representations}};
+    \end{tikzpicture}\\[4pt]
+    \footnotesize
+    Sub-network embeddings\\
+    $z_k(x) = f_{\theta_k}(x) \in \mathbb{R}^D$\\[4pt]
+    \scriptsize
+    \colorbox{purple!10}{\parbox{3.3cm}{\centering
+        \textbf{Representation Diversity:}\\
+        Mean Linear CKA = 0.9008\\
+        (Orthogonal feature spaces;\\
+        lowest CKA = 0.8824)
+    }}
+};
+
+% Box 9: Adaptive Router
+\node[box=magenta, text width=3.8cm, minimum height=4.2cm, right=0.35cm of b8] (b9) {
+    \begin{tikzpicture}
+        \node[badge=magenta] at (0, 0) {9};
+        \node[header=magenta, right=0.15cm of {(0,0)}] {\textbf{Adaptive Router}\\\textbf{(Gating Network)}};
+    \end{tikzpicture}\\[3pt]
+    \footnotesize
+    Lightweight $g_\phi(x)$ ($\sim 16\text{K}$ params)\\[3pt]
+    \tikz{
+        \node[draw=magenta!60!black, fill=magenta!10, rounded corners=2pt, font=\scriptsize, minimum width=2.8cm] (r1) {Conv1D + Pooling};
+        \node[draw=magenta!60!black, fill=magenta!10, rounded corners=2pt, font=\scriptsize, minimum width=2.8cm, below=0.15cm of r1] (r2) {Linear + ReLU};
+        \node[draw=magenta!60!black, fill=magenta!10, rounded corners=2pt, font=\scriptsize, minimum width=2.8cm, below=0.15cm of r2] (r3) {Linear + Softmax};
+        \draw[->, line width=0.6pt] (r1) -- (r2);
+        \draw[->, line width=0.6pt] (r2) -- (r3);
+    }\\[3pt]
+    \footnotesize
+    $w(x) \in \Delta^{K-1}$ (gating weights)
+};
+
+% Box 10: Sparse Top-2 Routing & Fusion
+\node[box=teal, text width=4.0cm, minimum height=4.2cm, right=0.35cm of b9] (b10) {
+    \begin{tikzpicture}
+        \node[badge=teal] at (0, 0) {10};
+        \node[header=teal, right=0.15cm of {(0,0)}] {\textbf{Sparse Top-2 Routing}\\\textbf{\& Expert Fusion}};
+    \end{tikzpicture}\\[3pt]
+    \footnotesize
+    \textbf{Top-2 Weight Renormalization:}\\[2pt]
+    $\tilde{w}_k(x) = \dfrac{w_k(x)}{\sum_{j \in \text{Top2}} w_j(x)}$\\[4pt]
+    \textbf{Prediction Fusion:}\\[2pt]
+    $\hat{z}(x) = \sum_{k=1}^K \tilde{w}_k(x) z_k(x)$\\[3pt]
+    $\hat{y}(x) = \sigma(\hat{z}(x)) \in [0, 1]^M$\\[3pt]
+    \scriptsize \textbf{FLOPs: 297.8 MFLOPs} ($-28.2\%$)
+};
+
+% Background group for Tier 2
+\begin{scope}[on background layer]
+    \node[groupbox=blue, fit=(b6)(b7)(b8)(b9)(b10), label={[font=\footnotesize\bfseries, text=blue!80!black, anchor=north west]north west:Expert Ensemble (Multiplicity with Fixed Budget $\approx$ 2.0M Parameters)}] (group_ens) {};
+\end{scope}
+
+% Tier 1 to Tier 2 Arrow
+\draw[arr] (b5.south) -- ++(0,-0.4) -| (b9.north);
+\draw[arr] (b5.south) -- ++(0,-0.4) -| (b7.north);
+\draw[arr] (b6) -- (b7);
+\draw[arr] (b7) -- (b8);
+\draw[arr] (b8) -- (b9);
+\draw[arr] (b9) -- (b10);
+
+% =========================================================================
+% TIER 3: TRAINING OBJECTIVE (Box 11)
+% =========================================================================
+\node[box=purple!60!magenta, text width=21.8cm, minimum height=1.7cm, below=0.8cm of group_ens] (b11) {
+    \begin{tikzpicture}
+        \node[badge=magenta] at (-9.5, 0) {11};
+        \node[header=magenta, right=0.15cm of {(-9.5,0)}] {\textbf{Training Objective (Joint Optimization)}};
+        \node at (0, 0.2) {\normalsize $\displaystyle \mathcal{L}_{\text{total}} = \mathcal{L}_{\text{diag}} + \lambda_{\text{div}}\mathcal{L}_{\text{div}} + \lambda_{\text{fail}}\mathcal{L}_{\text{fail}}$};
+        \node[font=\scriptsize, align=center] at (-5.5, -0.35) {\textbf{Diagnostic Loss (BCE)}\\$\mathcal{L}_{\text{diag}}$};
+        \node[font=\scriptsize, align=center] at (0, -0.35) {\textbf{Diversity Regularization}\\$\mathcal{L}_{\text{div}} = -\mathcal{H}(\bar{w})$ (prevents collapse)};
+        \node[font=\scriptsize, align=center] at (6.2, -0.35) {\textbf{Failure-Aware Routing}\\$\mathcal{L}_{\text{fail}} = \sum_k w_k(x) \mathcal{L}_{\text{BCE}}(f_{\theta_k}(x), y)$\\($\lambda_{\text{div}}=0.05, \lambda_{\text{fail}}=0.10$)};
+    \end{tikzpicture}
+};
+
+% Arrow Tier 2 to Tier 3
+\draw[dasharr] (b10.south) -- ++(0,-0.35) -| (b11.north);
+
+% =========================================================================
+% TIER 4: INFERENCE & SELECTIVE CLASSIFICATION (Boxes 12 - 15)
+% =========================================================================
+
+% Box 12: Predictive Uncertainty
+\node[box=blue, text width=5.0cm, minimum height=3.6cm, below=1.0cm of b11.south west, anchor=north west] (b12) {
+    \begin{tikzpicture}
+        \node[badge=blue] at (0, 0) {12};
+        \node[header=blue, right=0.15cm of {(0,0)}] {\textbf{Predictive Uncertainty}\\\textbf{Estimation}};
+    \end{tikzpicture}\\[4pt]
+    \footnotesize
+    $\displaystyle U(x) = \sum_{m=1}^M \mathcal{H}(\hat{y}_m(x))$\\[3pt]
+    $\displaystyle \quad + 2.0 \cdot \sum_{m=1}^M \frac{1}{K}\sum_{k=1}^K \left(\sigma(z_{k,m}(x)) - \hat{y}_m(x)\right)^2$\\[4pt]
+    \scriptsize Combines entropy + ensemble disagreement
+};
+
+% Box 13: Selective Classification
+\node[box=teal, text width=5.0cm, minimum height=3.6cm, right=0.45cm of b12] (b13) {
+    \begin{tikzpicture}
+        \node[badge=teal] at (0, 0) {13};
+        \node[header=teal, right=0.15cm of {(0,0)}] {\textbf{Selective Classification}\\\textbf{(Uncertainty Triage)}};
+    \end{tikzpicture}\\[4pt]
+    \footnotesize
+    Classify fraction $c$ with lowest $U(x)$;\\[2pt]
+    Abstain on remaining $1-c$ for clinical overread\\[4pt]
+    \colorbox{teal!10}{\parbox{4.5cm}{\centering \scriptsize
+        \textbf{Risk Reduction at $c=90\%$ Coverage:}\\
+        Hamming risk: $11.95\% \to 10.37\%$\\
+        Relative Risk Reduction: \textbf{4.18\%} ($p=0.0093$)
+    }}
+};
+
+% Box 14: Final Prediction
+\node[box=purple, text width=4.8cm, minimum height=3.6cm, right=0.45cm of b13] (b14) {
+    \begin{tikzpicture}
+        \node[badge=purple] at (0, 0) {14};
+        \node[header=purple, right=0.15cm of {(0,0)}] {\textbf{Final Multi-Label}\\\textbf{Prediction}};
+    \end{tikzpicture}\\[4pt]
+    \footnotesize
+    Output Probabilities $\hat{y} \in [0, 1]^5$:\\[4pt]
+    \tikz{
+        \foreach \lbl/\val/\clr/\y in {NORM/0.12/green!40!teal/0.6, MI/0.83/red!60!black/0.3, STTC/0.41/orange/0.0, CD/0.67/teal/-0.3, HYP/0.21/purple/-0.6} {
+            \node[font=\tiny\bfseries, anchor=east] at (0, \y) {\lbl};
+            \fill[\clr, rounded corners=1pt] (0.2, \y-0.08) rectangle (0.2 + 2.0*\val, \y+0.08);
+            \node[font=\tiny, anchor=west] at (0.25 + 2.0*\val, \y) {\val};
+        }
+    }
+};
+
+% Box 15: Evaluation & Analysis
+\node[box=green!60!teal, text width=5.2cm, minimum height=3.6cm, right=0.45cm of b14] (b15) {
+    \begin{tikzpicture}
+        \node[badge=green!60!teal] at (0, 0) {15};
+        \node[header=teal!80!black, right=0.15cm of {(0,0)}] {\textbf{Evaluation and Analysis}\\\textbf{(Clinical Validation)}};
+    \end{tikzpicture}\\[3pt]
+    \scriptsize
+    \textbullet~\textbf{Discrimination:} Macro AUROC / AUPRC\\
+    \textbullet~\textbf{Probability Calibration:} Brier score, ECE\\
+    \textbullet~\textbf{Safety:} Multi-label selective Hamming risk\\
+    \textbullet~\textbf{Efficiency:} MFLOPs ($-28.2\%$), Latency\\
+    \textbullet~\textbf{Clinical Stress:} Noise, wander, lead dropouts\\
+    \textbullet~\textbf{Diversity:} Penultimate layer linear CKA
+};
+
+% Background group for Tier 4
+\begin{scope}[on background layer]
+    \node[groupbox=teal, fit=(b12)(b13)(b14)(b15), label={[font=\footnotesize\bfseries, text=teal!80!black, anchor=north west]north west:Inference Phase (Selective Classification \& Clinical Decision Support)}] (group_inf) {};
+\end{scope}
+
+% Arrow Tier 3 to Tier 4
+\draw[dasharr] (b11.south) -- (group_inf.north);
+\draw[arr] (b12) -- (b13);
+\draw[arr] (b13) -- (b14);
+\draw[arr] (b14) -- (b15);
+
+\end{tikzpicture}
+\end{document}

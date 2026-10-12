@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software or benchmark in your research, please cite it as below."
+title: "MOSAIC-Med: Multiplicity and Architectural Diversity Outperform Monolithic Scale in Resource-Constrained ECG Diagnosis"
+version: 1.0.0
+date-released: 2026-10-12
+url: "https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med"
+repository-code: "https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med"
+authors:
+  - family-names: "Faisal"
+    given-names: "Sibgha"
+    affiliation: "Department of Biomedical Engineering, Riphah International University, Lahore, Pakistan"
+    email: "sibghafaisal88@gmail.com"
+  - family-names: "Tanveer"
+    given-names: "Hamna"
+    affiliation: "Department of Artificial Intelligence, University of Management and Technology, Sialkot, Pakistan"
+    email: "hamnaaa281@gmail.com"
+  - family-names: "Fatima-Tu-Zahra"
+    given-names: ""
+    affiliation: "Department of Biomedical Engineering, Riphah International University, Lahore, Pakistan"
+    email: "Fatima.zahra@riphah.edu.pk"
+  - family-names: "Aftab"
+    given-names: "Mahad"
+    affiliation: "Department of Biomedical Engineering, University of Engineering and Technology, Lahore, Pakistan"
+    email: "Mahadaftab680@gmail.com"
+preferred-citation:
+  type: conference-paper
+  title: "MOSAIC-Med: Multiplicity and Architectural Diversity Outperform Monolithic Scale in Resource-Constrained Electrocardiogram Diagnosis"
+  authors:
+    - family-names: "Faisal"
+      given-names: "Sibgha"
+    - family-names: "Tanveer"
+      given-names: "Hamna"
+    - family-names: "Fatima-Tu-Zahra"
+      given-names: ""
+    - family-names: "Aftab"
+      given-names: "Mahad"
+  conference:
+    name: "International Conference on Intelligent Computing (ICIC 2026)"
+  year: 2026

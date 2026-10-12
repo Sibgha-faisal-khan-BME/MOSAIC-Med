@@ -1,0 +1,4 @@
+Item 2: Parameter-matched control (Hetero 1,993,688 vs Homo 1,975,572 params, 5 seeds, Holm tests) - completed in 0.1s
+Item 3: Fix evidence (measured FLOPs, real CKA table, fixed Fig 2 labels, real stage 6 waterfall, real Fig 8) - completed in 81.7s
+Item 1: Multi-seed rerun (routing, robustness, selective-risk across 5 seeds 42-46) - completed in 894.5s
+Item 4: Loss-term ablation (5 variants x 3 seeds, router on frozen experts with cached logits) - completed in 663.7s

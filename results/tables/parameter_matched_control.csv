@@ -1,0 +1,5 @@
+Metric,Homogeneous 4xResNet (Mean ± SD),Heterogeneous Matched (Mean ± SD),Delta (Hetero - Homo),Paired t-statistic,Raw p-value,Holm-adjusted p-value,Statistically Significant (α=0.05),Parameter Matching
+Macro AUROC,0.9084 ± 0.0008,0.9110 ± 0.0006,+0.0026,3.978,1.6433e-02,5.7737e-02,False,"1,975,572 vs 1,993,688 (+0.92%)"
+Macro AUPRC,0.7711 ± 0.0010,0.7759 ± 0.0015,+0.0048,4.135,1.4434e-02,5.7737e-02,False,"1,975,572 vs 1,993,688 (+0.92%)"
+Brier Score (Calibration),0.0881 ± 0.0002,0.0867 ± 0.0005,-0.0014,-3.885,1.7771e-02,5.7737e-02,False,"1,975,572 vs 1,993,688 (+0.92%)"
+Expected Calibration Error (ECE),0.0195 ± 0.0017,0.0171 ± 0.0022,-0.0024,-2.505,6.6427e-02,6.6427e-02,False,"1,975,572 vs 1,993,688 (+0.92%)"

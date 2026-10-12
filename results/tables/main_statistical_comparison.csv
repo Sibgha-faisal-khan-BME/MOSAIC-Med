@@ -1,0 +1,5 @@
+Comparison,Metric,MOSAIC-Med (95% CI),Single Large (95% CI),Difference (95% CI),Test Method,p-value,Significant (α=0.05)
+MOSAIC-Med vs Single Large (2M),Macro AUROC,"0.9117 [0.9042, 0.9195]","0.9058 [0.8978, 0.9138]","0.0059 [0.0025, 0.0092]",DeLong's Correlated ROC,3.6323e-04,True
+MOSAIC-Med vs Single Large (2M),Macro AUPRC,"0.7783 [0.7610, 0.7960]","0.7673 [0.7493, 0.7850]","0.0110 [0.0038, 0.0176]",Bootstrap Percentile,< 0.001,True
+MOSAIC-Med vs Single Large (2M),Macro F1,"0.6847 [0.6665, 0.7025]","0.6741 [0.6553, 0.6923]","0.0106 [-0.0019, 0.0233]",McNemar's Paired Disagreement,2.6773e-02,True
+MOSAIC-Med vs Single Large (2M),Brier Score (Calibration),"0.0870 [0.0825, 0.0915]","0.0897 [0.0853, 0.0941]","-0.0027 [-0.0044, -0.0010]",Bootstrap Percentile,< 0.001,True

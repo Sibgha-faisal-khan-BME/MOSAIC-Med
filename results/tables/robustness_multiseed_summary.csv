@@ -1,0 +1,7 @@
+Condition,Single Large AUROC,Single Retention (%),MOSAIC-Med AUROC,MOSAIC Retention (%),Delta AUROC (M - S),Welch p-value,Holm p-value,Significant (α=0.05)
+Clean Test Baseline,0.9059 ± 0.0010,100.00% ± 0.00%,0.9113 ± 0.0008,100.00% ± 0.00%,0.0054 ± 0.0011,1.6884e-05,8.4421e-05,True
+High-Freq EMG Noise (σ=0.15),0.9049 ± 0.0011,99.89% ± 0.05%,0.9106 ± 0.0009,99.93% ± 0.04%,0.0057 ± 0.0016,3.0633e-05,1.2253e-04,True
+Low-Freq Baseline Wander,0.9028 ± 0.0010,99.66% ± 0.05%,0.9060 ± 0.0014,99.42% ± 0.13%,0.0031 ± 0.0013,4.6274e-03,4.6274e-03,True
+Missing Precordial Leads (V1-V3),0.8694 ± 0.0021,95.97% ± 0.25%,0.8801 ± 0.0030,96.57% ± 0.34%,0.0106 ± 0.0043,3.0238e-04,8.8163e-04,True
+"Missing Limb Leads (I, II, III)",0.8892 ± 0.0021,98.16% ± 0.23%,0.8967 ± 0.0014,98.41% ± 0.23%,0.0075 ± 0.0034,2.9388e-04,8.8163e-04,True
+External Site Substitute (Site != 0),0.8978 ± 0.0008,99.10% ± 0.06%,0.9033 ± 0.0009,99.13% ± 0.03%,0.0055 ± 0.0011,6.1953e-06,3.7172e-05,True

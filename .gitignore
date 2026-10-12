@@ -1,0 +1,67 @@
+# Raw datasets (PTB-XL, ~3 GB)
+ptbxl/
+data/
+raw_data/
+*.tar.gz
+*.zip
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache and notebooks
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+*.npy
+*.npz
+
+# Model Checkpoints & Large Weights (>50 MB)
+checkpoints/
+scratch/checkpoints/
+scratch/cache/
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.h5
+*.weights
+
+# Local binary executables & large scratch renders
+scratch/bin/
+scratch/*.png
+scratch/*.pdf
+scratch/*.zip
+scratch/test_images/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# LaTeX auxiliary files
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Vendor templates
+ICIC-2026-Official-LaTeX-Author-Package-3Page-Sample/
+ICIC-2026-Official-LaTeX-Author-Package-3Page-Sample.zip

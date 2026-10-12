@@ -1,0 +1,6 @@
+Variant,Trained Component,Frozen Component,lambda_div,lambda_fail,AUROC,AUPRC,F1,Brier,ECE,Raw Welch p vs Baseline,Holm p vs Baseline
+"Uniform Average (L_diag only, No Router)",None (Uniform Mean),4 Hetero Experts (2.0M params),0.0,0.0,0.9108 ± 0.0009,0.7749 ± 0.0013,0.6798 ± 0.0042,0.0869 ± 0.0007,0.0178 ± 0.0031,-,-
+Router with L_diag only (BCE),AdaptiveRouter (~16k params),4 Hetero Experts (2.0M params),0.0,0.0,0.9049 ± 0.0017,0.7625 ± 0.0018,0.6694 ± 0.0014,0.0900 ± 0.0013,0.0240 ± 0.0052,1.2010e-02,4.8039e-02
+Router with L_diag + L_div (Diversity),AdaptiveRouter (~16k params),4 Hetero Experts (2.0M params),0.05,0.0,0.9088 ± 0.0015,0.7700 ± 0.0025,0.6741 ± 0.0054,0.0880 ± 0.0012,0.0199 ± 0.0047,1.2899e-01,2.5798e-01
+Router with L_diag + L_fail (Failure-Aware),AdaptiveRouter (~16k params),4 Hetero Experts (2.0M params),0.0,0.05,0.9053 ± 0.0020,0.7635 ± 0.0024,0.6713 ± 0.0029,0.0897 ± 0.0016,0.0221 ± 0.0063,2.5140e-02,7.5420e-02
+All Terms (L_diag + L_div + L_fail),AdaptiveRouter (~16k params),4 Hetero Experts (2.0M params),0.05,0.05,0.9090 ± 0.0013,0.7702 ± 0.0024,0.6741 ± 0.0041,0.0879 ± 0.0011,0.0196 ± 0.0034,1.2948e-01,2.5798e-01
