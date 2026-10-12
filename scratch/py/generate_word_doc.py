@@ -324,9 +324,9 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
         "TABLE I. Cohort Demographics and Diagnostic Prevalence on PTB-XL",
         ["Split Partition", "Records", "Patients", "Age (SD)", "Female (%)"],
         [
-            ["Training (Folds 1–8)", "17,411", "15,082", "59.8 ± 16.9", "48.1%"],
-            ["Validation (Fold 9)", "2,183", "1,894", "59.7 ± 17.0", "47.9%"],
-            ["Test (Fold 10)", "2,205", "1,893", "59.9 ± 16.7", "48.0%"]
+            ["Training (Folds 1–8)", "17,418", "15,023", "62.3 ± 31.4", "47.8%"],
+            ["Validation (Fold 9)", "2,183", "1,942", "64.5 ± 37.1", "48.1%"],
+            ["Test (Fold 10)", "2,198", "1,904", "64.4 ± 34.2", "48.5%"]
         ],
         [Inches(2.2), Inches(1.1), Inches(1.1), Inches(1.3), Inches(1.1)]
     )
@@ -649,43 +649,32 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     
     add_h2("A. Evaluation of Formal Hypotheses")
     add_p(
-        "Under fixed compute, capacity splitting is a variance-reduction regularizer as demonstrated by Multiplicity "
-        "Superiority (H1) by dividing fixed capacity into K = 2, 4 experts outperforms monolithic scale (K = 1) [1, 12]."
-    )
-    add_p(
-        "Orthogonal feature representations improve calibration (Brier 0.0867 vs 0.0881) in Architectural Diversity (H2) "
-        "by outperforming homogeneous ensembles, and reduce CKA similarity (0.9008 vs 0.9458) [14]."
-    )
-    add_p(
-        "Top-2 dynamic routing matches dense discrimination (0.9113 vs 0.9110) with a 28.2% reduction in FLOPs, while "
-        "also eliminating FLOPs with edge inference efficiency."
-    )
-    add_p(
-        "Selective Deferral (H4): Based on predictive entropy and ensemble disagreement, a well ordered uncertainty is "
-        "obtained, monotonically decreasing the clinical diagnostic risk [8, 11]."
+        "Under an approximately fixed parameter budget, capacity splitting acts as a variance-reduction regularizer: Multiplicity "
+        "Superiority (H1) is validated as dividing fixed capacity into K = 2, 4 experts statistically outperforms monolithic scale (K = 1, DeLong p = 3.63 × 10^-4) [1, 12]. "
+        "In Architectural Diversity (H2), evaluating heterogeneous against homogeneous ensembles shows a consistent improvement trend (Holm p = 0.058) in discrimination "
+        "and calibration (Brier 0.0867 vs 0.0881) by reducing CKA similarity (0.9008 vs 0.9458) [14], though it does not reach statistical significance at alpha = 0.05. "
+        "For Sparse Adaptive Routing (H3), Top-2 dynamic routing achieves empirical discrimination comparable to dense routing (0.9113 vs 0.9110, p = 0.42) while reducing "
+        "FLOPs by 28.2% relative to dense ensembling (297.8 vs 414.9 MFLOPs). Finally, under Selective Deferral (H4), combining predictive entropy and ensemble disagreement "
+        "yields well-ordered uncertainty, achieving a 4.18% relative risk reduction at 90% coverage (p = 0.0093) [8, 11]."
     )
     
     add_h2("B. Negative Results and Theoretical Boundaries")
     add_p(
-        "Capacity Under-Allocation at K = 16: Slightly more than 125K parameters per expert, the sub-networks are not "
-        "sufficiently capable of handling complex morphologies, and the sequential latency is increased by a factor of "
-        "three to 6.78 ms."
-    )
-    add_p(
-        "Training using diagnostic loss results in a collapse of the gating (0.9049 vs 0.9108), showing that unregularized "
-        "routers are prone to collapsing prematurely into a single expert."
+        "Capacity Under-Allocation and Gating Collapse: With only ~125K parameters per expert (K = 16), sub-networks lack capacity for multi-lead morphology extraction, "
+        "tripling latency to 6.78 ms. Furthermore, training the router using diagnostic loss alone results in gating collapse into a single expert (0.9049 vs 0.9108), "
+        "demonstrating that diversity regularization is essential."
     )
     
     add_h2("C. Clinical Translation and Limitations")
     add_p(
-        "For memory constrained wearable monitors, Edge Cardiology & Triage has included Top-2 sparse routing to reduce "
-        "inference to 297.8 MFLOPs (-28.2%) in order to increase battery life. In the hospital PACS, uncertainty deferral "
-        "results in triaging 90% of the tracings with very little error (10.37%) and sends up borderline cases for specialist review."
+        "For memory-constrained monitors, Top-2 sparse routing reduces inference FLOPs by 28.2% relative to dense ensembling, while uncertainty deferral enables identifying "
+        "ambiguous tracings for potential clinician overread in retrospective evaluation. These technical benchmarks demonstrate algorithmic feasibility rather than clinical "
+        "efficacy or improved patient outcomes."
     )
     add_p(
-        "Limitations: Assessments were performed for edge budgets (~2.0M parameters) and it remains to be seen if "
-        "multiplicity benefits can be maintained at foundation scales [9, 18]. Parameter budgets are matched across arms, but inference compute is not: the Top-2 router uses 297.8 MFLOPs versus 123.9 for the monolithic baseline, and a FLOP-matched comparison is left for future work. The external-site evaluation uses a held-out subset of PTB-XL (N = 248) and is not an independent cohort. Physical hardware validation and cross "
-        "institutional cohorts are warranted for future research."
+        "Limitations: Assessments were conducted under edge parameter budgets (~2.0M parameters), and evaluating multiplicity at foundation scales is left for future work [9, 18]. "
+        "Parameter budgets are matched across arms, but inference compute is not: the Top-2 router requires 297.8 MFLOPs versus 123.9 for the monolithic baseline. The site-shift "
+        "evaluation uses an internal held-out subset of PTB-XL (s != 0) and does not substitute for independent external multi-hospital validation."
     )
 
     # =========================================================================
@@ -693,13 +682,11 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     # =========================================================================
     add_h1("V. Conclusion")
     add_p(
-        "This study validates the small-model multiplicity and architectural diversity to outperform monolithic scale in "
-        "12-lead ECG diagnosis with an invariant parameter budget. A 2.0M budget can be split across a number of inductive "
-        "biases to produce better discrimination, calibration and noise-resilience than an equivalent monolithic network. "
-        "A four-expert heterogeneous ensemble with sparse Top-2 routing and selective abstention offers a framework that "
-        "balances edge performance and safety for clinical use."
+        "This study demonstrates that fixed-budget model multiplicity statistically outperforms monolithic scale in 12-lead ECG diagnosis, while architectural diversity exhibits "
+        "a positive descriptive improvement trend (p = 0.058). Distributing a ~2.0M parameter budget across specialized compact networks provides superior discrimination, "
+        "calibration, and noise resilience over an equivalent monolithic baseline. A four-expert heterogeneous ensemble with sparse Top-2 routing and selective abstention "
+        "provides an effective framework balancing edge efficiency and diagnostic reliability."
     )
-
 
     add_h1("Data and Code Availability")
     add_p(
@@ -714,23 +701,23 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     
     refs = [
         "[1] B. Lakshminarayanan et al., \"Simple and scalable predictive uncertainty estimation using deep ensembles,\" in Advances in Neural Information Processing Systems (NeurIPS), vol. 30, pp. 6402–6413, 2017.",
-        "[2] Y. Geifman and R. El-Yaniv, \"SelectiveNet: A deep neural network with an integrated reject option,\" Journal of Machine Learning Research, vol. 20, no. 189, pp. 1–31, 2019.",
+        "[2] Y. Geifman and R. El-Yaniv, \"SelectiveNet: A deep neural network with an integrated reject option,\" in International Conference on Machine Learning (ICML), pp. 2205–2214, 2019.",
         "[3] S. Kornblith et al., \"Similarity of neural network representations revisited,\" in International Conference on Machine Learning (ICML), pp. 3519–3529, 2019.",
         "[4] P. Wagner et al., \"PTB-XL, a large publicly available ECG dataset,\" Scientific Data, vol. 7, no. 1, p. 154, 2020. doi: 10.1038/s41597-020-0495-6.",
         "[5] N. Strodthoff et al., \"Deep learning for ECG analysis: Benchmarks and insights from PTB-XL,\" IEEE Journal of Biomedical and Health Informatics, vol. 25, no. 5, pp. 1519–1528, 2021. doi: 10.1109/JBHI.2021.3051778.",
-        "[6] E. Black et al., \"Predictive multiplicity in clinical machine learning models,\" in ACM Conference on Fairness, Accountability, and Transparency (FAccT), pp. 421–434, 2024. doi: 10.1145/3630106.3658917.",
+        "[6] E. Black, M. Raghavan, and S. Barocas, \"Model multiplicity: Opportunities, concerns, and solutions,\" in ACM Conference on Fairness, Accountability, and Transparency (FAccT), pp. 850–863, 2022. doi: 10.1145/3531146.3533149.",
         "[7] G. Forestier et al., \"Feature orthogonality and negative correlation regularization in deep time-series ensembles,\" Data Mining and Knowledge Discovery, vol. 38, no. 4, pp. 1890–1918, 2024. doi: 10.1007/s10618-024-01021-3.",
-        "[8] B. Kompa et al., \"A second opinion on medical AI: When should models abstain and request clinician overread?\" Lancet Digital Health, vol. 6, no. 3, pp. e215–e224, 2024. doi: 10.1016/S2589-7500(23)00248-1.",
-        "[9] J. Li et al., \"An electrocardiogram foundation model built on over 10 million recordings with external evaluation,\" arXiv preprint arXiv:2410.04104, 2024.",
+        "[8] B. Kompa, J. Snoek, and A. L. Beam, \"Second opinion needed: Communicating uncertainty in medical machine learning,\" npj Digital Medicine, vol. 4, no. 1, p. 4, 2021. doi: 10.1038/s41746-020-00367-3.",
+        "[9] J. Li et al., \"An electrocardiogram foundation model built on over 10 million recordings with external evaluation,\" arXiv preprint arXiv:2410.04133, 2024.",
         "[10] W. Zhang et al., \"Split ensemble learning: Parameter partitioning and collaborative training for edge inference,\" IEEE Internet of Things Journal, vol. 11, no. 8, pp. 13890–13902, 2024. doi: 10.1109/JIOT.2023.3341201.",
-        "[11] A. Argha et al., \"Selective classification and dynamic escalation for reliable 12-lead ECG interpretation,\" IEEE Transactions on Biomedical Engineering, vol. 72, no. 1, pp. 312–323, 2025. doi: 10.1109/TBME.2024.3412098.",
+        "[11] A. Argha, H. Alinejad-Rokny, M. Baumgartner, G. Steinke, and S.-Y. Ooi, \"A novel deep ensemble method for selective classification of electrocardiograms,\" IEEE Transactions on Biomedical Engineering, vol. 72, no. 2, pp. 577–588, 2025. doi: 10.1109/TBME.2024.3412098.",
         "[12] Y. Chen et al., \"Resource-constrained ensemble pruning and parameter budget allocation in deep networks,\" IEEE Transactions on Neural Networks and Learning Systems, vol. 36, no. 2, pp. 1145–1158, 2025. doi: 10.1109/TNNLS.2024.3398112.",
         "[13] Y. Xu et al., \"EnECG: Efficient ensemble learning for electrocardiogram multi-task foundation model,\" arXiv preprint arXiv:2511.22935, 2025.",
-        "[14] K. Zhou et al., \"Diversity decompositions and feature orthogonality in adversarial and collaborative ensembles,\" in International Conference on Machine Learning (ICML), 2025.",
-        "[15] L. Han et al., \"CogMoE: Signal quality-aware routing for physiological time-series classification,\" arXiv preprint arXiv:2602.08914, 2026.",
-        "[16] Y. E. Mert et al., \"Multi-label 12-lead ECG classification on the PTB-XL dataset: Evaluation of deep architectures and ensembles,\" arXiv preprint arXiv:2609.12803, 2026.",
-        "[17] J. Wang et al., \"Domain-expert-guided hybrid mixture-of-experts for robust physiological signal classification,\" in IEEE International Symposium on Biomedical Imaging (ISBI), pp. 1–5, 2026. doi: 10.1109/ISBI56142.2026.10423120.",
-        "[18] Y. Xu et al., \"ECG-MoE: Mixture-of-expert electrocardiogram foundation model for multi-task signal analysis,\" arXiv preprint arXiv:2603.04589, 2026."
+        "[14] J.-Q. Guo, M.-Z. Qian, W. Gao, and Z.-H. Zhou, \"On the diversity of adversarial ensemble learning,\" in International Conference on Machine Learning (ICML), 2025.",
+        "[15] A. B. Shah et al., \"CogMoE: Signal-quality–guided multimodal MoE for cognitive load prediction,\" in International Conference on Learning Representations (ICLR), 2026.",
+        "[16] Y. E. Mert, E. Akdoğan, and H. Üvet, \"Multi-label 12-lead ECG classification on the PTB-XL dataset: A comparative evaluation of deep learning architectures and heterogeneous ensemble approaches,\" arXiv preprint arXiv:2609.12803, 2026.",
+        "[17] J. Gu et al., \"Domain-expert-guided hybrid mixture-of-experts for medical AI: Integrating data-driven learning with clinical priors,\" in IEEE International Symposium on Biomedical Imaging (ISBI), pp. 1–5, 2026. doi: 10.1109/ISBI61048.2026.11515744.",
+        "[18] Y. Xu et al., \"ECG-MoE: Mixture-of-expert electrocardiogram foundation model,\" arXiv preprint arXiv:2603.04589, 2026."
     ]
     
     for r in refs:
