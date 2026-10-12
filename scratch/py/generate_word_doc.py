@@ -678,7 +678,7 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
         "balances edge efficiency and diagnostic reliability."
     )
 
-    add_h1("Data and Code Availability")
+    add_h1("Acknowledgment")
     add_p(
         "The PTB-XL dataset is publicly available at https://physionet.org/content/ptb-xl/1.0.3/ [4]. "
         "Experiment code and reproduction scripts are available at https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med."
