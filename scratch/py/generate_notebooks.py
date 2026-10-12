@@ -1,5 +1,6 @@
 """
-Script to create the 8 research Jupyter notebooks for MOSAIC-Med using nbformat.
+Script to generate the 8 verified research Jupyter notebooks for MOSAIC-Med using nbformat.
+Incorporates all methodological, statistical, and computational reconciliations.
 """
 
 import os
@@ -17,29 +18,28 @@ def create_cell(cell_type, content):
 def make_nb_01():
     nb = nbf.v4.new_notebook()
     nb.cells = [
-        create_cell("markdown", """# Notebook 01: PTB-XL Dataset Loading, Preprocessing & Stratified Folds
+        create_cell("markdown", """# Notebook 01: PTB-XL Dataset Loading, Deduplication & Patient-Level Splitting
 ### MOSAIC-Med Research Study: Investigating Small-Model Multiplicity vs Scale in Healthcare AI
 
 ---
 
 ### Overview & Objectives
-This notebook establishes the clinical testbed for the MOSAIC-Med study using the PTB-XL 12-lead electrocardiography dataset (Wagner et al., *Scientific Data* 2020; Strodthoff et al., *IEEE JBHI* 2021).
+This notebook establishes the clinical testbed for the MOSAIC-Med study using the PTB-XL 12-lead electrocardiography benchmark (Wagner et al., *Scientific Data* 2020; Strodthoff et al., *IEEE JBHI* 2021).
 Specifically, we:
-1. Load raw 12-lead ECG signals (100 Hz, 1000 samples, 10 seconds duration per recording) from `ptbxl/records100/`.
-2. Map SCP statements into the 5 primary diagnostic superclasses:
-   - **NORM**: Normal ECG
-   - **MI**: Myocardial Infarction
-   - **STTC**: ST/T Changes
-   - **CD**: Conduction Disturbance
-   - **HYP**: Hypertrophy
-3. Implement PTB-XL recommended patient-stratified folds:
-   - **Folds 1–8**: Training set (17,418 records)
-   - **Fold 9**: Validation set (2,183 records)
-   - **Fold 10**: Test set (2,198 records)
-   - Verify strict patient-level separation (zero patient leakage between splits).
-4. Perform robust per-lead standardization (zero-mean, unit-variance, artifact clipping).
-5. Document the held-out clinical site substitute for external validation testing.
-6. Cache all preprocessed arrays as `.npy` to eliminate I/O bottlenecks in downstream experiments.
+1. **Document Dataset Version & Deduplication**:
+   - Raw PTB-XL v1.0.1 contained 21,837 records across 18,885 patients.
+   - Official PTB-XL v1.0.2 / v1.0.3 changelogs identified and removed **38 duplicate recordings across 16 patients** (`ptbxl/ptbxl_v103_changelog.txt`), yielding exactly **21,799 unique recordings across 18,869 distinct patients**.
+2. **Implement Patient-Stratified Splits**:
+   - **Training Set (Folds 1–8)**: 17,418 records (15,023 patients)
+   - **Validation Set (Fold 9)**: 2,183 records (1,942 patients)
+   - **Test Set (Fold 10)**: 2,198 records (1,904 patients)
+   - Programmatically verify strict patient separation (zero patient identity leakage).
+3. **Verify Signal Preprocessing & Normalization**:
+   - Zero-mean unit-variance standardization evaluated per 10-second recording instance across time ($L=1000$) independently per lead:
+     $$x'_c(t) = \\frac{x_c(t) - \\mu_c}{\\max(\\sigma_c, 10^{-6})}, \\quad \\text{clipped to } [-10, 10]$$
+   - No dataset-level training statistics are used during inference, ensuring total independence.
+4. **Clarify Acquisition Site Shift**:
+   - Non-primary acquisition sites (`site != 0.0`) within held-out Test Fold 10 serve as an internal domain shift stress test.
 """),
         create_cell("code", """import os
 import sys
@@ -56,24 +56,24 @@ from scratch.py.data import (
 from scratch.py.plotting import set_ieee_style, COLORS
 
 set_ieee_style()
-print("Libraries and MOSAIC-Med modules loaded successfully.")
+print("Libraries and MOSAIC-Med data modules loaded successfully.")
 """),
-        create_cell("markdown", """## 1. Metadata Inspection & Diagnostic Superclass Mapping
-Let's inspect the distribution of patients, recordings, clinical sites, and superclasses across the 10 folds.
+        create_cell("markdown", """## 1. Metadata Inspection & Deduplication Verification
+Let's inspect the database metadata and verify the 21,799 records and 18,869 unique patients.
 """),
         create_cell("code", """# Load PTB-XL database metadata
 df_meta = load_ptbxl_metadata('ptbxl')
-print(f"Total ECG Records: {len(df_meta):,}")
-print(f"Unique Patients: {df_meta['patient_id'].nunique():,}")
-print(f"Acquisition Sites: {df_meta['site'].nunique()} distinct sites")
+print(f"Total Unique Records: {len(df_meta):,}")
+print(f"Distinct Patients:    {df_meta['patient_id'].nunique():,}")
+print(f"Acquisition Sites:    {df_meta['site'].nunique()} distinct sites")
 
-# Inspect superclass prevalence
+# Inspect superclass prevalence summary
 summary_table = pd.read_csv('results/tables/data_summary.csv')
 summary_table
 """),
-        create_cell("markdown", """## 2. Patient-Level Stratification Verification
-To guarantee clinical validity and avoid optimistic leakage, records from the same patient must never cross train, validation, or test partitions.
-Let's mathematically verify zero patient overlap.
+        create_cell("markdown", """## 2. Patient-Level Stratification Verification (Zero Leakage Check)
+To guarantee clinical validity and eliminate optimistic bias, records from the same patient must never cross train, validation, or test partitions.
+Let's verify mathematically that there is zero patient overlap.
 """),
         create_cell("code", """train_patients = set(df_meta[df_meta['strat_fold'] <= 8]['patient_id'])
 val_patients = set(df_meta[df_meta['strat_fold'] == 9]['patient_id'])
@@ -83,22 +83,29 @@ overlap_train_val = len(train_patients.intersection(val_patients))
 overlap_train_test = len(train_patients.intersection(test_patients))
 overlap_val_test = len(val_patients.intersection(test_patients))
 
-print(f"Train/Val Patient Overlap: {overlap_train_val} (Required: 0)")
+print(f"Train Records: {len(df_meta[df_meta['strat_fold'] <= 8]):,} | Distinct Patients: {len(train_patients):,}")
+print(f"Val Records:   {len(df_meta[df_meta['strat_fold'] == 9]):,}  | Distinct Patients: {len(val_patients):,}")
+print(f"Test Records:  {len(df_meta[df_meta['strat_fold'] == 10]):,}  | Distinct Patients: {len(test_patients):,}")
+print("---")
+print(f"Train/Val Patient Overlap:  {overlap_train_val} (Required: 0)")
 print(f"Train/Test Patient Overlap: {overlap_train_test} (Required: 0)")
-print(f"Val/Test Patient Overlap: {overlap_val_test} (Required: 0)")
+print(f"Val/Test Patient Overlap:   {overlap_val_test} (Required: 0)")
+
 assert overlap_train_val == 0 and overlap_train_test == 0 and overlap_val_test == 0, "Patient leakage detected!"
-print(">> Patient-level stratification verified with zero leakage.")
+print(">> Patient-level stratification verified with zero patient overlap across splits.")
 """),
         create_cell("markdown", """## 3. Signal Standardization & Cached Arrays
-Raw ECG waveforms are standardized per lead to zero mean and unit variance.
-Let's inspect a sample 12-lead ECG waveform from the training set.
+Raw ECG waveforms are standardized instance-by-instance per lead across the temporal axis ($L=1000$).
+Let's inspect preprocessed arrays from disk cache.
 """),
         create_cell("code", """# Load preprocessed arrays from cache
 data = cache_ptbxl_dataset('ptbxl', 'scratch/cache')
 X_train, y_train = data['X_train'], data['y_train']
+X_val, y_val = data['X_val'], data['y_val']
 X_test, y_test = data['X_test'], data['y_test']
 
 print(f"X_train shape: {X_train.shape} (float32)")
+print(f"X_val shape:   {X_val.shape} (float32)")
 print(f"X_test shape:  {X_test.shape} (float32)")
 
 # Plot 12 leads of a representative sample
@@ -115,15 +122,14 @@ for idx, lead in enumerate(lead_names):
     ax.grid(True, alpha=0.2)
 axes[-1, 0].set_xlabel("Time (seconds)")
 axes[-1, 1].set_xlabel("Time (seconds)")
-fig.suptitle("Preprocessed 12-Lead ECG Sample (100 Hz, 10 Seconds)", fontsize=9.5)
+fig.suptitle("Preprocessed 12-Lead ECG Sample (100 Hz, 1000 Samples)", fontsize=9.5)
 plt.tight_layout()
 plt.show()
 """),
-        create_cell("markdown", """## 4. External Validation Substitute Documentation
+        create_cell("markdown", """## 4. Internal Acquisition Site Domain Shift Documentation
 > [!NOTE]
-> Per proposal guidelines and study requirements, an independent external dataset is unavailable locally.
-> Therefore, we define a clearly labeled **External Domain Substitute** using test-fold records from non-primary acquisition sites (`site != 0`, comprising over 1,000 held-out clinical recordings from secondary medical centers and recording hardware).
-> This provides a rigorous test of domain generalization across differing hospital acquisition environments.
+> In held-out Test Fold 10 ($N=2,198$), records acquired at non-primary recording sites (`site != 0.0`, $N = 1,711$) exhibit hardware and sensor configuration variations.
+> This subset is used as an **internal acquisition site transferability stress test**, but does NOT constitute an independent external hospital cohort.
 """)
     ]
     with open("01_data_preprocessing.ipynb", "w", encoding="utf-8") as f:
@@ -141,15 +147,18 @@ def make_nb_02():
 
 ---
 
-### Core Scientific Question
-Under an equal total parameter budget of **~2.0 Million parameters**, how should capacity be distributed?
-- **$K = 1$**: 1 Large Network (~2.0M parameters, $1 \\times 2.0\\text{M}$)
-- **$K = 2$**: 2 Moderate Networks (~1.0M parameters each, $2 \\times 1.0\\text{M}$)
-- **$K = 4$**: 4 Compact Networks (~500K parameters each, $4 \\times 500\\text{K}$)
-- **$K = 8$**: 8 Small Networks (~250K parameters each, $8 \\times 250\\text{K}$)
-- **$K = 16$**: 16 Micro Networks (~125K parameters each, $16 \\times 125\\text{K}$)
+### Core Scientific Question & Invariance Envelope
+Under a fixed total parameter budget of **~2.0 Million parameters**, how should capacity be distributed?
+- **Parameter Invariance Envelope**: $\\mathcal{B}_{\\text{target}} = 2.00 \\times 10^6 \\pm 0.06 \\times 10^6$ parameters (tolerance $\\pm 3.0\\%$).
+- Channel widths $W$ are discrete integers ($W \\in \\{16, 23, 32, 46, 65\\}$), preventing exact integer convergence to $2,000,000$.
+- Configurations:
+  - **$K = 1$** ($W=65$): $2,019,945$ params ($+0.997\\%$) | 123.9 MFLOPs
+  - **$K = 2$** ($W=46$): $2 \\times 1,015,225 = 2,030,450$ params ($+1.523\\%$) | 126.9 MFLOPs
+  - **$K = 4$** ($W=32$): $4 \\times 493,893 = 1,975,572$ params ($-1.221\\%$) | 126.8 MFLOPs
+  - **$K = 8$** ($W=23$): $8 \\times 256,869 = 2,054,952$ params ($+2.748\\%$) | 136.2 MFLOPs
+  - **$K = 16$** ($W=16$): $16 \\times 125,605 = 2,009,680$ params ($+0.484\\%$) | 139.8 MFLOPs
 
-All configurations are trained across **5 independent random seeds** to isolate structural capacity allocation from seed-level variance.
+All configurations are trained across **5 independent random seeds (42–46)** to isolate structural capacity allocation from initialization stochasticity.
 """),
         create_cell("code", """import os
 import sys
@@ -162,22 +171,29 @@ from IPython.display import Image, display
 
 print("Modules loaded.")
 """),
-        create_cell("markdown", """## 1. Scaling Results Table
-Below are the raw results across all 5 random seeds and the aggregated summary statistics (mean ± standard deviation) for all 5 configurations.
+        create_cell("markdown", """## 1. Scaling Results Table (Seed-Level and Aggregated)
+Below are the individual seed results and the aggregated summary statistics (mean ± SD) for all 5 configurations.
 """),
         create_cell("code", """scaling_df = pd.read_csv('results/tables/scaling_results.csv')
 scaling_summary = pd.read_csv('results/tables/scaling_summary.csv')
-scaling_summary
+
+# Add explicit percentage deviation column from 2.0M target
+target_budget = 2_000_000
+scaling_summary['Budget Deviation (%)'] = ((scaling_summary['Total Parameters'] - target_budget) / target_budget * 100).round(3)
+
+print("Fixed-Budget Scaling Performance Across 5 Seeds:")
+scaling_summary[['Configuration', 'Total Parameters', 'Budget Deviation (%)', 'MFLOPs', 'Macro AUROC', 'Macro AUPRC', 'Brier Score', 'Latency (ms)']]
 """),
-        create_cell("markdown", """## 2. Discrimination Scaling Curve (AUROC, AUPRC, F1)
-Let's inspect the scaling curves for discrimination metrics and Brier score calibration under the fixed 2.0M parameter budget.
+        create_cell("markdown", """## 2. Discrimination and Calibration Scaling Curves
+Let's inspect the scaling curves for AUROC discrimination and Brier score calibration under the fixed 2.0M parameter budget.
 """),
         create_cell("code", """display(Image('results/images/scaling_tradeoff.png'))
 """),
         create_cell("markdown", """## 3. Analysis & Key Insights
-1. **Multiplicity vs Individual Scale**: Splitting a fixed 2.0M parameter budget into 4 or 8 compact experts matches or exceeds the diagnostic discrimination of a single monolithic 2.0M network while drastically reducing prediction variance.
-2. **Probability Calibration**: Brier scores and ECE consistently improve with ensemble multiplicity ($K=4$ and $K=8$), confirming that averaging diverse representations mitigates overconfident clinical misclassifications.
-3. **Transition Point ($K=16$)**: At $K=16$ (125K parameters per expert), individual model capacity begins to hit a lower bound for complex 12-lead spatio-temporal ECG patterns, identifying the empirical transition boundary where over-fragmentation limits expert expressiveness.
+1. **Multiplicity Superiority (H1 Supported)**: Partitioning the 2.0M parameter budget into $K=2$ ($0.9085 \\pm 0.0007$) and $K=4$ ($0.9084 \\pm 0.0009$) compact experts statistically outperforms the monolithic $K=1$ architecture ($0.9059 \\pm 0.0010$, DeLong $p = 3.63 \\times 10^{-4}$).
+2. **Probability Calibration**: Brier scores improve from $0.0900$ ($K=1$) to $0.0881$ ($K=4$), confirming that model splitting acts as an effective variance regularizer.
+3. **Over-Fragmentation Boundary ($K=16$)**: At $K=16$ (125K parameters per expert), individual network capacity is insufficient to resolve multi-lead morphological patterns, degrading AUROC to $0.9048 \\pm 0.0005$ and tripling latency to $6.78$ ms.
+4. **Capacity vs Compute**: Parameter counts are matched within $\\pm 3.0\\%$, but sequential inference FLOPs scale slightly from 123.9 to 139.8 MFLOPs due to per-network stem overheads.
 """)
     ]
     with open("02_fixed_budget_scaling.ipynb", "w", encoding="utf-8") as f:
@@ -195,18 +211,18 @@ def make_nb_03():
 
 ---
 
-### Hypothesis
+### Hypothesis 2 & Parameter-Matched Control
 Does combining models with **distinct inductive biases** (heterogeneous architectures) produce complementary feature representations that surpass homogeneous ensembles of identical copies?
 
-We compare two 4-expert populations under the identical 2.0M budget:
-1. **Homogeneous Population**: 4 identical 1D ResNets (500K parameters each)
-2. **Heterogeneous Population**:
-   - **1D ResNet** (500K parameters) — Standard deep residual temporal convolutions
-   - **MultiScale-CNN / Inception-1D** (500K parameters) — Multi-resolution temporal kernels (5, 11, 23 samples) capturing fast QRS vs slow P/T wave dynamics
-   - **Temporal Convolutional Network (TCN)** (500K parameters) — Exponentially dilated convolutions capturing long-range rhythm patterns
-   - **Conv-Attention / Transformer** (500K parameters) — Multi-head self-attention pooling for global inter-lead context
+We compare two 4-expert populations under an invariant ~2.0M parameter budget (+0.92% matching margin):
+1. **Homogeneous Population (4$\\times$ResNet)**: $1,975,572$ parameters (126.8 MFLOPs)
+2. **Heterogeneous Population**: $1,993,688$ parameters (413.7 MFLOPs)
+   - **ResNet-1D** (493,893 params, 31.69 MFLOPs) — Deep residual temporal convolutions
+   - **MultiScale-CNN** (508,909 params, 50.72 MFLOPs) — Parallel multi-resolution temporal kernels (5, 11, 23 samples)
+   - **TCN-1D** (490,661 params, 245.86 MFLOPs) — Exponentially dilated causal convolutions ($d \\in \\{1, 2, 4, 8\\}$)
+   - **ConvAttention-1D** (500,225 params, 85.40 MFLOPs) — Convolutional stem + 2-layer self-attention Transformer
 
-We measure **representation diversity** directly using Linear **Centered Kernel Alignment (CKA)** on the penultimate layer feature representations.
+Representation diversity is quantified using Linear **Centered Kernel Alignment (CKA)** on penultimate activations over the held-out test cohort.
 """),
         create_cell("code", """import os
 import sys
@@ -218,22 +234,26 @@ from IPython.display import Image, display
 
 print("Modules loaded.")
 """),
-        create_cell("markdown", """## 1. Diagnostic Performance Comparison
+        create_cell("markdown", """## 1. Parameter-Matched Statistical Comparison (Seeds 42–46)
 """),
-        create_cell("code", """div_df = pd.read_csv('results/tables/diversity_comparison.csv')
-print("Homogeneous vs Heterogeneous Diagnostic Metrics:")
-div_summary = div_df.groupby('type')[['auroc', 'auprc', 'f1', 'brier', 'ece']].agg(['mean', 'std'])
-div_summary
+        create_cell("code", """matched_df = pd.read_csv('results/tables/parameter_matched_control.csv')
+print("Parameter-Matched Control Results (5 Seeds, df=4):")
+matched_df[['Metric', 'Homogeneous 4xResNet (Mean ± SD)', 'Heterogeneous Matched (Mean ± SD)', 'Delta (Hetero - Homo)', 'Raw p-value', 'Holm-adjusted p-value', 'Statistically Significant (α=0.05)']]
 """),
-        create_cell("markdown", """## 2. Centered Kernel Alignment (CKA) Representation Heatmaps
-A lower CKA score between two models indicates higher representational orthogonality (complementary features rather than redundant duplicates).
+        create_cell("markdown", """## 2. Centered Kernel Alignment (CKA) Representation Analysis
+A lower CKA score between two models indicates higher feature orthogonality.
 """),
-        create_cell("code", """display(Image('results/images/cka_representation_diversity.png'))
+        create_cell("code", """cka_df = pd.read_csv('results/tables/cka_comparison.csv')
+print("Mean Pairwise Linear CKA Scores:")
+print(f"Homogeneous 4xResNet Mean CKA:  {cka_df[cka_df['population'] == 'Homogeneous']['mean_cka'].values[0]:.4f}")
+print(f"Heterogeneous Matched Mean CKA: {cka_df[cka_df['population'] == 'Heterogeneous']['mean_cka'].values[0]:.4f}")
+
+display(Image('results/images/cka_representation_diversity.png'))
 """),
-        create_cell("markdown", """## 3. Findings
-- **Feature Diversity**: The pairwise CKA between homogeneous ResNet experts averages > 0.88, indicating substantial representational duplication.
-- In contrast, the heterogeneous population exhibits lower pairwise CKA (~0.60–0.72), demonstrating that architectural variety enforces genuinely distinct feature representations of cardiac electrophysiology.
-- This representational diversity translates to superior ensemble robustness and error complementarity.
+        create_cell("markdown", """## 3. Scientific Findings & Statistical Rigor
+- **Observed Trend (H2)**: The heterogeneous ensemble achieves higher discrimination (AUROC $0.9110 \\pm 0.0006$ vs $0.9084 \\pm 0.0008$) and calibration (Brier $0.0867 \\pm 0.0005$ vs $0.0881 \\pm 0.0002$).
+- **Statistical Significance Status**: Across 5 seeds, paired $t$-test yields raw $p = 0.0164$, which adjusts to **Holm $p = 0.0577$** across the $m=4$ metric family (AUROC, AUPRC, Brier, ECE). Because $p > 0.05$, this result represents a **consistent descriptive improvement trend**, but does not achieve strict significance at the conventional $\\alpha = 0.05$ threshold.
+- **CKA Diversity**: Heterogeneous models achieve lower representational similarity ($0.9008$ vs $0.9458$), indicating orthogonal feature spaces. However, CKA characterizes representation structure and should not be treated as a causal proof of performance.
 """)
     ]
     with open("03_architectural_diversity.ipynb", "w", encoding="utf-8") as f:
@@ -246,21 +266,23 @@ A lower CKA score between two models indicates higher representational orthogona
 def make_nb_04():
     nb = nbf.v4.new_notebook()
     nb.cells = [
-        create_cell("markdown", """# Notebook 04: MOSAIC-Med Adaptive Routing & Regularization
-### Dynamic Patient-Specific Expert Selection, Diversity ($L_{div}$), and Failure ($L_{fail}$) Losses
+        create_cell("markdown", """# Notebook 04: MOSAIC-Med Adaptive Routing & Computational Reconciliation
+### Dynamic Patient-Specific Expert Gating, Loss Regularization, and FLOP Accounting
 
 ---
 
-### Mathematical Formulation
-Rather than forcing all $K$ experts to execute for every patient, MOSAIC-Med employs a lightweight **Adaptive Router** $R(x; \\theta_R)$ that generates patient-specific gating weights $w(x) = \\text{Softmax}(R(x))$ over the expert pool.
+### Computational Accounting Reconciliation
+A critical distinction must be made between computational savings **relative to dense 4-expert ensembling** versus **relative to the monolithic baseline**:
+- **Single Large Model (1$\\times$2M)**: 123.9 MFLOPs
+- **Heterogeneous Uniform Average**: $31.69 + 50.72 + 245.86 + 85.40 = \\mathbf{413.7\\text{ MFLOPs}}$
+- **Dense Learned Router**: $413.7 + 1.19\\text{ (router)} = \\mathbf{414.9\\text{ MFLOPs}}$
+- **Sparse Top-2 Router**: $1.19\\text{ (router)} + 296.6\\text{ (mean active Top-2 pair)} = \\mathbf{297.8\\text{ MFLOPs}}$
 
-The complete training objective is:
-$$\\mathcal{L} = \\mathcal{L}_{\\text{diag}} + \\lambda_d \\mathcal{L}_{\\text{div}} + \\lambda_f \\mathcal{L}_{\\text{fail}}$$
+**Key Insight**: Sparse Top-2 routing cuts inference computation by **28.2% relative to dense heterogeneous ensembling** (297.8 vs 414.9 MFLOPs). However, it requires **$2.40\\times$ more computation than the single monolithic model** (123.9 MFLOPs).
 
-Where:
-- $\\mathcal{L}_{\\text{diag}}$: Binary cross-entropy diagnostic loss.
-- $\\mathcal{L}_{\\text{div}} = \\frac{1}{\\binom{K}{2}} \\sum_{i < j} \\left(\\cos(z_i, z_j)\\right)^2$: Penalizes pairwise cosine similarity between expert feature representations $z_i, z_j$.
-- $\\mathcal{L}_{\\text{fail}} = \\frac{1}{K} \\sum_{i=1}^K (p_i - y) \\cdot (p_i - \\bar{p})$: Negative correlation learning term discouraging correlated errors.
+The router objective is regularized by:
+$$\\mathcal{L}_{\\text{total}} = \\mathcal{L}_{\\text{diag}} + \\lambda_{\\text{div}} \\mathcal{L}_{\\text{div}} + \\lambda_{\\text{fail}} \\mathcal{L}_{\\text{fail}}$$
+where $\\mathcal{L}_{\\text{div}} = -\\mathcal{H}(\\bar{w})$ prevents expert collapse by maximizing mean gating entropy.
 """),
         create_cell("code", """import os
 import sys
@@ -271,23 +293,21 @@ from IPython.display import Image, display
 
 print("Modules loaded.")
 """),
-        create_cell("markdown", """## 1. Routing Strategies Comparison
-We evaluate:
-1. **Simple Uniform Averaging**: All 4 experts process every patient with equal weight (100% FLOPs).
-2. **Dense Adaptive Routing**: Learned patient-specific weights across all experts (100% FLOPs).
-3. **MOSAIC-Med Sparse Top-2 Router**: Dynamically activates only the top-2 most relevant experts per patient (~50% FLOPs).
+        create_cell("markdown", """## 1. Routing Strategies Comparison Table Across 5 Seeds
 """),
-        create_cell("code", """routing_df = pd.read_csv('results/tables/routing_ablation.csv')
-routing_df
+        create_cell("code", """routing_summary = pd.read_csv('results/tables/routing_multiseed_summary.csv')
+print("Adaptive Routing Comparison Across 5 Seeds (Mean ± SD):")
+routing_summary[['Routing Strategy', 'Active Experts', 'MFLOPs', 'Macro AUROC', 'Macro AUPRC', 'Holm p-value', 'Significant (α=0.05)']]
 """),
         create_cell("markdown", """## 2. Learned Expert Specialization Across Clinical Conditions
-Let's visualize how the router distributes weights across the 5 diagnostic classes:
+Let's inspect how the router distributes weights across the 5 diagnostic classes:
 """),
         create_cell("code", """display(Image('results/images/adaptive_routing_analysis.png'))
 """),
-        create_cell("markdown", """## 3. Key Observations
-- The **Sparse Top-2 Router** achieves diagnostic discrimination virtually indistinguishable from the full 4-expert ensemble while **cutting inference FLOPs and latency by nearly 50%**.
-- The MultiScale-CNN expert receives higher activation for localized wave changes (STTC, MI), whereas TCN and Conv-Attention receive higher activation for rhythm and conduction disturbances (CD).
+        create_cell("markdown", """## 3. Findings & Rigorous Claim Calibration
+- **Descriptive Equivalence (H3)**: The Sparse Top-2 Router ($0.9113 \\pm 0.0008$) achieves diagnostic parity with dense averaging ($0.9110 \\pm 0.0007$) while dynamically reducing FLOPs by 28.2% relative to dense 4-expert inference.
+- **Compute Trade-off**: The router enables computational pruning for multi-expert ensembles, but does NOT reduce compute relative to the single monolithic model (297.8 vs 123.9 MFLOPs).
+- **Specialization**: The router routes Conduction Disturbances (CD) and Hypertrophy (HYP) predominantly to TCN-1D and MultiScale-CNN ($w_k > 0.30$), while ResNet-1D and ConvAttention-1D receive higher weight for MI and STTC.
 """)
     ]
     with open("04_adaptive_routing_and_diversity.ipynb", "w", encoding="utf-8") as f:
@@ -300,17 +320,19 @@ Let's visualize how the router distributes weights across the 5 diagnostic class
 def make_nb_05():
     nb = nbf.v4.new_notebook()
     nb.cells = [
-        create_cell("markdown", """# Notebook 05: Uncertainty-Triggered Escalation & Selective Classification
-### Two-Stage Dynamic Inference, Risk-Coverage Curves, and Clinical Abstention
+        create_cell("markdown", """# Notebook 05: Predictive Uncertainty Estimation & Selective Abstention
+### Multi-Label Predictive Entropy, Ensemble Variance, and Risk-Coverage Optimization
 
 ---
 
-### Clinical Workflow
-In high-stakes cardiology diagnosis, automated models should:
-1. Process straightforward, unambiguous ECGs rapidly with low compute.
-2. Quantify both predictive entropy $H(p)$ and epistemic disagreement $\\sigma^2_{\\text{experts}}$.
-3. **Escalate**: If uncertainty exceeds threshold $\\tau_{\\text{esc}}$, dynamically activate additional experts.
-4. **Abstain**: If uncertainty remains high even after full ensemble evaluation, flag the recording for mandatory cardiologist review rather than emitting an unconfident guess.
+### Uncertainty Formulation & Objective
+Predictive uncertainty $U(x)$ combines aleatoric predictive entropy and epistemic ensemble disagreement:
+$$U(x) = \\sum_{m=1}^M \\mathcal{H}(\\hat{y}_m(x)) + \\alpha \\cdot \\sum_{m=1}^M \\frac{1}{K}\\sum_{k=1}^K (\\sigma(z_{k, m}(x)) - \\hat{y}_m(x))^2$$
+
+- **First Term (Aleatoric)**: Multi-label binary predictive entropy $\\mathcal{H}(p) = -p \\log_2 p - (1-p) \\log_2 (1-p)$.
+- **Second Term (Epistemic)**: Variance across expert predictions relative to ensemble mean $\\hat{y}_m$.
+- **Validation Tuning**: The scaling coefficient $\\alpha = 2.0$ was tuned strictly on **Validation Fold 9** to **minimize the Area Under the Risk-Coverage Curve (AURC)**, since risk corresponds to Hamming classification error rate.
+- **Threshold Selection**: Deferral thresholds corresponding to coverage levels $c \\in \\{0.80, 0.85, 0.90, 0.95\\}$ were fitted on Validation Fold 9 quantiles and subsequently applied to held-out Test Fold 10.
 """),
         create_cell("code", """import os
 import sys
@@ -321,19 +343,20 @@ from IPython.display import Image, display
 
 print("Modules loaded.")
 """),
-        create_cell("markdown", """## 1. Selective Classification & Risk Reduction Table
-Below is the selective diagnostic risk (Hamming error %) across clinical coverage levels from 100% (zero abstention) to 80% (top 20% most uncertain cases deferred to clinicians).
+        create_cell("markdown", """## 1. Selective Classification Risk Summary Across 5 Seeds
 """),
-        create_cell("code", """selective_df = pd.read_csv('results/tables/selective_classification.csv')
-selective_df
+        create_cell("code", """selective_summary = pd.read_csv('results/tables/selective_risk_multiseed_summary.csv')
+print("Multi-Label Hamming Risk (%) and Relative Risk Reduction Across 5 Seeds:")
+selective_summary[['Coverage (c)', 'Single Large Risk (%)', 'MOSAIC-Med Risk (%)', 'Relative Risk Reduction (%)', 'Holm p-value', 'Significant (α=0.05)']]
 """),
         create_cell("markdown", """## 2. Risk vs Coverage Curve
 """),
-        create_cell("code", """display(Image('results/images/risk_coverage_abstention.png'))
+        create_cell("code", """display(Image('results/images/risk_coverage.png'))
 """),
-        create_cell("markdown", """## 3. Clinical Implications
-- By abstaining on just **10%** of the most uncertain ECGs (90% coverage), MOSAIC-Med achieves a dramatic **relative risk reduction > 30%** over the single large model.
-- Disagreement across heterogeneous experts provides a highly calibrated trigger for human-in-the-loop clinical overread (Kompa et al., *Lancet Digital Health* 2024).
+        create_cell("markdown", """## 3. Clinical Abstention Insights (H4 Supported)
+- **Empirical Risk Reduction**: Deferring the $10\\%$ most ambiguous records ($c=90\\%$) yields an empirical **$4.18\\% \\pm 2.02\\%$ relative risk reduction** relative to the single large model (Hamming risk drops from $10.83\\%$ to $10.37\\%$, Holm $p = 9.34 \\times 10^{-3}$).
+- **Monotonic Ordering**: Diagnostic risk decreases monotonically as coverage is reduced, confirming that $U(x)$ effectively isolates ambiguous tracings.
+- **Scope Note**: Selective deferral is demonstrated as an algorithmic evaluation on retrospective data, not a clinically deployed or validated bedside triage system.
 """)
     ]
     with open("05_uncertainty_escalation_abstention.ipynb", "w", encoding="utf-8") as f:
@@ -346,19 +369,24 @@ selective_df
 def make_nb_06():
     nb = nbf.v4.new_notebook()
     nb.cells = [
-        create_cell("markdown", """# Notebook 06: Clinical Robustness Stress Testing & External Validation
-### Evaluating Noise, Baseline Wander, Missing Leads, and Held-Out Acquisition Sites
+        create_cell("markdown", """# Notebook 06: Clinical Robustness Stress Testing & Domain Shift
+### Evaluating High-Frequency Noise, Baseline Wander, Missing Leads, and Held-Out Acquisition Sites
 
 ---
 
-### Stress Testing Scenarios
-Real-world ECG acquisition suffers from physical artifacts and hardware variations. We evaluate:
-1. **High-Frequency EMG Noise**: Gaussian artifact ($\sigma = 0.15$) simulating muscle tremor.
-2. **Low-Frequency Baseline Drift**: 0.25 Hz drift simulating patient respiration / electrode movement.
-3. **Missing Precordial Leads**: Dropping chest leads V1–V3 (simulating misplaced/loose electrodes).
-4. **Missing Limb Leads**: Dropping limb leads I–III.
-5. **Real Documented Drift**: Subset of PTB-XL records clinically flagged with `baseline_drift == 1`.
-6. **External Site Substitute**: Test recordings acquired at secondary clinical sites (`site != 0`).
+### Mathematical Formulations of Stress Corruptions
+All perturbation parameters were pre-specified based on clinical ECG artifact literature (Strodthoff et al., 2021) prior to test cohort evaluation:
+1. **High-Frequency EMG / Tremor Noise**:
+   $$X_{\\text{EMG}} = X + \\epsilon, \\quad \\epsilon \\sim \\mathcal{N}(0, \\sigma^2), \\quad \\sigma = 0.15$$
+2. **Low-Frequency Baseline Wander**:
+   $$X_{\\text{drift}}[c, t] = X[c, t] + A \\sin\\left(2\\pi f \\frac{t}{f_s} + \\phi_c\\right)$$
+   where $A = 0.50$, $f = 0.20$ Hz, $f_s = 100$ Hz, and $\\phi_c \\sim \\mathcal{U}(0, 2\\pi)$ per lead.
+3. **Missing Precordial Leads (V1–V3)**:
+   $$X_{\\text{precordial}}[c, t] = 0 \\quad \\forall c \\in \\{6, 7, 8\\}, \\quad t \\in [0, 1000)$$
+4. **Missing Limb Leads (I–III)**:
+   $$X_{\\text{limb}}[c, t] = 0 \\quad \\forall c \\in \\{0, 1, 2\\}, \\quad t \\in [0, 1000)$$
+5. **Acquisition Site Domain Shift**:
+   Held-out test records acquired from non-primary clinical recording sites (`site != 0.0`) within PTB-XL.
 """),
         create_cell("code", """import os
 import sys
@@ -369,20 +397,20 @@ from IPython.display import Image, display
 
 print("Modules loaded.")
 """),
-        create_cell("markdown", """## 1. Robustness Benchmark Table
+        create_cell("markdown", """## 1. Robustness Benchmark Table Across 5 Seeds
 """),
-        create_cell("code", """robustness_df = pd.read_csv('results/tables/robustness_benchmarks.csv')
-robustness_df
+        create_cell("code", """robustness_summary = pd.read_csv('results/tables/robustness_multiseed_summary.csv')
+print("Diagnostic Retention Under Clinical Degradations Across 5 Seeds (Mean ± SD):")
+robustness_summary[['Condition', 'Single Large AUROC', 'MOSAIC-Med AUROC', 'Delta AUROC (M - S)', 'Holm p-value', 'Significant (α=0.05)']]
 """),
-        create_cell("markdown", """## 2. Performance Retention Comparison
-Retention measures the percentage of baseline clean AUROC retained under each degradation.
+        create_cell("markdown", """## 2. Retention Comparison Under Stress Corruptions
 """),
-        create_cell("code", """display(Image('results/images/robustness_stress_test.png'))
+        create_cell("code", """display(Image('results/images/robustness_stress.png'))
 """),
-        create_cell("markdown", """## 3. Robustness Findings
-- The Single Large 2.0M model experiences substantial performance degradation under missing precordial leads and high-frequency noise.
-- MOSAIC-Med retains **significantly higher AUROC across every degradation** (retention advantage between +3.5% and +8.2%).
-- On the held-out clinical site substitute (`site != 0`), MOSAIC-Med shows superior out-of-domain transferability.
+        create_cell("markdown", """## 3. Robustness Findings & Scope Calibration
+- **Resilience to Sensor Loss**: Under precordial lead loss (V1–V3), Single Large drops to $0.8694 \\pm 0.0021$, whereas MOSAIC-Med retains $0.8801 \\pm 0.0030$ ($\\Delta = +0.0106$, Holm $p = 8.82 \\times 10^{-4}$). Ensembling orthogonal inductive biases provides compensatory feature extraction across unaffected leads.
+- **Acquisition Site Shift**: Under held-out non-primary site records (`site != 0`), MOSAIC-Med achieves AUROC $0.9033 \\pm 0.0009$ vs $0.8978 \\pm 0.0008$ ($p = 3.72 \\times 10^{-5}$).
+- **Validation Scope**: This held-out site evaluation tests internal acquisition transferability within PTB-XL; prospective validation on independent hospital cohorts remains required before clinical claims can be made.
 """)
     ]
     with open("06_robustness_and_external_validation.ipynb", "w", encoding="utf-8") as f:
@@ -395,18 +423,18 @@ Retention measures the percentage of baseline clean AUROC retained under each de
 def make_nb_07():
     nb = nbf.v4.new_notebook()
     nb.cells = [
-        create_cell("markdown", """# Notebook 07: Critical Ablation Studies
-### Step-by-Step Factorial Analysis of Multiplicity, Heterogeneity, Routing & Deferral
+        create_cell("markdown", """# Notebook 07: Factorial Regularization Ablation Studies
+### Step-by-Step Analysis of Diagnostic (L_diag), Diversity (L_div), and Failure (L_fail) Losses
 
 ---
 
-### Component Ablations
-To satisfy Section 7 of the Research Proposal, we isolate the empirical contribution of each individual mechanism:
-1. **Model Multiplicity**: 1 Large Network vs Split-4 Homogeneous.
-2. **Architectural Heterogeneity**: Split-4 Homogeneous vs Split-4 Heterogeneous.
-3. **Adaptive Routing**: Uniform Averaging vs Learned Patient Routing.
-4. **Sparse Top-2 Escalation**: Activating only 2 experts per case.
-5. **Selective Abstention**: Deferring high-uncertainty cases (90% coverage).
+### Objective & Experimental Design
+To evaluate the contribution of each regularization loss term on frozen heterogeneous experts across 3 random seeds:
+1. **Variant 1: Uniform Averaging (Baseline)** — Equal 0.25 weighting across all 4 experts.
+2. **Variant 2: Router ($\\mathcal{L}_{\\text{diag}}$ only)** — Router trained with standard BCE loss.
+3. **Variant 3: Router ($\\mathcal{L}_{\\text{diag}} + \\mathcal{L}_{\\text{div}}$)** — Adds mean gating entropy maximization to prevent expert collapse.
+4. **Variant 4: Router ($\\mathcal{L}_{\\text{diag}} + \\mathcal{L}_{\\text{fail}}$)** — Adds expert failure penalty.
+5. **Variant 5: All Terms ($\\mathcal{L}_{\\text{diag}} + \\mathcal{L}_{\\text{div}} + \\mathcal{L}_{\\text{fail}}$)** — Complete composite objective.
 """),
         create_cell("code", """import os
 import sys
@@ -417,19 +445,19 @@ from IPython.display import Image, display
 
 print("Modules loaded.")
 """),
-        create_cell("markdown", """## 1. Ablation Summary Table
+        create_cell("markdown", """## 1. Loss Ablation Results Table Across 3 Seeds
 """),
-        create_cell("code", """ablation_df = pd.read_csv('results/tables/ablation_summary.csv')
-ablation_df
+        create_cell("code", """loss_ablation = pd.read_csv('results/tables/loss_ablation_summary.csv')
+print("Loss-Term Regularization Ablation Across 3 Seeds (Mean ± SD):")
+loss_ablation[['Ablation Variant', 'Macro AUROC', 'Macro AUPRC', 'Brier Score', 'Holm-adjusted p-value', 'Significant (α=0.05)']]
 """),
-        create_cell("markdown", """## 2. Waterfall Diagram: Incremental Value of Each Mechanism
+        create_cell("markdown", """## 2. Factorial Ablation Waterfall Diagram
 """),
         create_cell("code", """display(Image('results/images/ablation_waterfall.png'))
 """),
-        create_cell("markdown", """## 3. Conclusions from Ablations
-- Ensembling homogeneous models provides initial variance reduction.
-- Architectural heterogeneity provides an additional boost in discrimination and substantial gain in calibration.
-- Adaptive routing and selective deferral unlock dramatic efficiency gains and risk reduction without requiring larger parameter budgets.
+        create_cell("markdown", """## 3. Conclusions & Critical Nuance
+- **Mitigating Router Collapse**: Training the router with diagnostic loss alone drops AUROC to $0.9049 \\pm 0.0017$ due to gating collapse into a single dominant expert. Adding $\\mathcal{L}_{\\text{div}}$ recovers performance to $0.9088 \\pm 0.0015$.
+- **Router vs Uniform Averaging**: When all 4 experts are executed, dense Uniform Averaging ($0.9108 \\pm 0.0009$) achieves slightly higher AUROC than the full router ($0.9090 \\pm 0.0013$). The primary role of learned routing is NOT to outperform dense averaging when compute is unconstrained, but to enable **sparse dynamic Top-2 execution** (297.8 MFLOPs), pruning compute by 28.2%.
 """)
     ]
     with open("07_ablation_studies.ipynb", "w", encoding="utf-8") as f:
@@ -443,17 +471,16 @@ def make_nb_08():
     nb = nbf.v4.new_notebook()
     nb.cells = [
         create_cell("markdown", """# Notebook 08: Formal Statistical Testing & Executive Synthesis
-### DeLong's Test, McNemar's Test, Stratified Bootstrap CIs, Holm Correction, and Top-Line Figures
+### DeLong Tests, McNemar Disagreements, Stratified Bootstrap CIs, and Hypothesis Alignment
 
 ---
 
-### Formal Statistical Methodology
-Per Section 6 of the Research Proposal:
-1. **DeLong's Test**: Nonparametric test for correlated ROC curves on identical test subjects (DeLong et al., *Biometrics* 1988).
-2. **McNemar's Paired Test**: Continuity-corrected $\\chi^2$ test for sample-level classification disagreements at operating threshold 0.5.
-3. **Stratified Patient-Level Bootstrap**: 2,000 resamples computing empirical 95% percentile confidence intervals for AUROC, AUPRC, F1, Brier score, and paired differences.
-4. **Holm-Bonferroni Step-Down Procedure**: Rigorous family-wise error rate control across the $K \\in \\{2, 4, 8, 16\\}$ multiple comparison configurations.
-5. **Standardized Effect Sizes**: Paired Cohen's d across independent random seeds.
+### Hierarchical Statistical Testing Protocol
+To address peer review rigor:
+1. **Within-Run Cohort Discrimination**: DeLong's test on paired test-set predictions ($N = 2,198$) comparing correlated ROC curves.
+2. **Sample-Level Decision Agreement**: Continuity-corrected McNemar's $\\chi^2$ test on binary decisions at threshold 0.5.
+3. **Patient-Level Bootstrap**: 2,000 resamples computing empirical 95% percentile confidence intervals for AUROC, AUPRC, F1, Brier score, and paired differences.
+4. **Across-Seed Variance**: Paired Student's $t$-test across the 5 independent seeds ($df = 4$) with Holm-Bonferroni correction over the $m=4$ metric family.
 """),
         create_cell("code", """import os
 import sys
@@ -467,7 +494,8 @@ print("Modules loaded.")
         create_cell("markdown", """## 1. Primary Statistical Comparison Table
 """),
         create_cell("code", """stat_df = pd.read_csv('results/tables/main_statistical_comparison.csv')
-stat_df
+print("Primary Statistical Comparison (MOSAIC-Med vs Single Large):")
+stat_df[['Comparison', 'Metric', 'MOSAIC-Med (95% CI)', 'Single Large (95% CI)', 'Difference (95% CI)', 'Test Method', 'p-value', 'Significant (α=0.05)']]
 """),
         create_cell("markdown", """## 2. Reliability & Calibration Analysis
 Reliability diagram and empirical confidence histogram comparing Single Large (2M) vs MOSAIC-Med:
@@ -475,15 +503,17 @@ Reliability diagram and empirical confidence histogram comparing Single Large (2
         create_cell("code", """display(Image('results/images/reliability_calibration.png'))
 """),
         create_cell("markdown", """## 3. Executive Top-Line Figure (IEEE Double-Column)
-This top-line figure summarizes the core novelty: superior discrimination, superior calibration, and 50% compute reduction under a fixed 2.0M parameter budget.
 """),
         create_cell("code", """display(Image('results/images/topline_mosaic_vs_single.png'))
 """),
-        create_cell("markdown", """## 4. Synthesis of Findings & Scientific Contribution
-1. **Empirical Multiplicity Scaling**: Dividing a 2.0M budget into 4 to 8 small models outperforms a single 2.0M model with high statistical significance ($p < 0.001$, DeLong and McNemar tests).
-2. **Calibration Advantage**: Ensemble multiplicity and heterogeneous inductive biases dramatically reduce overconfidence, lowering Brier scores and ECE.
-3. **Adaptive Efficiency**: MOSAIC-Med's sparse routing activates only the necessary experts per patient, achieving superior clinical performance at roughly half the computational cost of the monolithic baseline.
-4. **Clinical Safety**: Dynamic uncertainty escalation and selective abstention provide an automated safeguard for high-stakes medical deployment.
+        create_cell("markdown", """## 4. Final Hypothesis Alignment Matrix
+
+| Hypothesis | Theoretical Focus | Empirical Status | Formal Stance |
+|---|---|---|---|
+| **H1: Multiplicity Superiority** | $K=2, 4$ vs Monolithic $K=1$ | **Statistically Validated** | Supported ($p = 3.63 \\times 10^{-4}$ DeLong, $p = 1.09 \\times 10^{-3}$ Holm). Intermediate capacity splitting acts as a variance regularizer. |
+| **H2: Diversity Benefit** | Heterogeneous vs Homogeneous | **Descriptive Trend** | Consistent improvement trend ($p = 0.0577$ Holm), non-significant at $\\alpha=0.05$. Lower linear CKA ($0.9008$ vs $0.9458$) characterizes feature orthogonality. |
+| **H3: Sparse Routing Efficiency** | Top-2 Router vs Dense Hetero | **Supported Trade-off** | Dynamic Top-2 gating achieves descriptive parity with dense ensembling ($0.9113$ vs $0.9110$) while reducing inference FLOPs by $28.2\\%$. Requires $2.40\\times$ more FLOPs than monolithic baseline. |
+| **H4: Selective Risk Reduction** | Uncertainty Abstention | **Supported in Retrospective Cohort** | Deferring $10\\%$ most ambiguous tracings achieves $4.18\\%$ relative risk reduction relative to monolithic baseline at $90\\%$ coverage ($p = 0.0093$). |
 """)
     ]
     with open("08_statistical_analysis_and_synthesis.ipynb", "w", encoding="utf-8") as f:
@@ -499,4 +529,4 @@ if __name__ == '__main__':
     make_nb_06()
     make_nb_07()
     make_nb_08()
-    print("All 8 research notebooks created successfully.")
+    print("All 8 research notebooks created and synchronized successfully.")
