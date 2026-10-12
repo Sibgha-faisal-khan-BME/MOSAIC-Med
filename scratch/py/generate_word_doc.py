@@ -69,8 +69,8 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     authors = [
         ("Sibgha Faisal", "Dept. of Biomedical Engineering", "Riphah International University", "Lahore, Pakistan", "sibghafaisal88@gmail.com"),
         ("Hamna Tanveer", "Dept. of Artificial Intelligence", "Univ. of Management and Technology", "Sialkot, Pakistan", "hamnaaa281@gmail.com"),
-        ("Fatima-Tu-Zahra†", "Dept. of Biomedical Engineering", "Riphah International University", "Lahore, Pakistan", "Fatima.zahra@riphah.edu.pk"),
-        ("Mahad Aftab†", "Dept. of Biomedical Engineering", "Univ. of Engineering and Technology", "Lahore, Pakistan", "Mahadaftab680@gmail.com")
+        ("Mahad Aftab", "Dept. of Biomedical Engineering", "Univ. of Engineering and Technology", "Lahore, Pakistan", "Mahadaftab680@gmail.com"),
+        ("Fatima-Tu-Zahra†", "Dept. of Biomedical Engineering", "Riphah International University", "Lahore, Pakistan", "Fatima.zahra@riphah.edu.pk")
     ]
     
     for i, a in enumerate(authors):
@@ -95,7 +95,7 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
         
     p_fn = doc.add_paragraph()
     p_fn.paragraph_format.space_after = Pt(6)
-    r_fn = p_fn.add_run("† Supervisors.")
+    r_fn = p_fn.add_run("† Supervisor.")
     r_fn.font.italic = True
     r_fn.font.size = Pt(8.5)
     
@@ -110,23 +110,17 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     r_abs_lbl.font.size = Pt(9)
     
     abstract_text = (
-        "Deep learning models for medical diagnostics predominantly emphasize monolithic parameter scaling. "
-        "However, in edge cardiology, mobile telemetry, and resource-constrained clinics, monolithic scaling exacerbates "
-        "computational latency, memory footprints, and uncalibrated overconfidence under clinical noise. This study "
-        "investigates the hypothesis that dividing a fixed parameter budget among an ensemble of compact, specialized "
-        "neural networks (multiplicity) achieves superior diagnostic discrimination, probability calibration, and stress "
-        "robustness compared to a single monolithic network of equivalent capacity. Using the standardized PTB-XL 12-lead "
-        "electrocardiography (ECG) benchmark across 21,799 clinical records and five diagnostic superclasses, a fixed total "
-        "capacity budget of ~2.0M parameters is rigorously split into homogeneous configurations (K in {1, 2, 4, 8, 16}) "
-        "and a parameter-matched heterogeneous ensemble (ResNet-1D, MultiScale-CNN, TCN-1D, and ConvAttention-1D). "
-        "Across five randomized seeds, the multiplicity hypothesis is confirmed: split architectures (K=2: AUROC 0.9085 ± 0.0007; "
-        "K=4: 0.9084 ± 0.0009) statistically outperform the monolithic baseline (K=1: 0.9059 ± 0.0010, DeLong p = 3.63 × 10^-4). "
-        "Heterogeneous inductive biases further improve discrimination (0.9110 ± 0.0007) and calibration (Brier score 0.0867 ± 0.0005 "
-        "vs 0.0881 ± 0.0002) by lowering representational similarity (linear CKA 0.9008 vs 0.9458). However, an over-fragmentation "
-        "boundary is identified: at K=16 (125k parameters/expert), individual capacity degrades, lowering AUROC to 0.9048 and "
-        "tripling latency. Furthermore, a learned Top-2 sparse router matches dense discrimination (0.9113) while reducing "
-        "computation by 28.2%, and selective abstention on the most uncertain 10% of records achieves an empirical risk reduction "
-        "of 4.18%. Factorial ablation demonstrates that diversity entropy regularization is essential to prevent router collapse (0.9088 vs 0.9049)."
+        "Deep neural networks for physiological signal classification predominantly rely on monolithic parameter scaling, "
+        "which incurs high computational latency and uncalibrated overconfidence under clinical noise. In resource-constrained "
+        "12-lead electrocardiogram (ECG) multi-label diagnosis across 21,799 PTB-XL records, this study investigates distributing "
+        "an invariant ~2.0M parameter budget among compact specialized networks (MOSAIC-Med). The multiplicity hypothesis (H1) "
+        "is validated: split architectures (K=2: AUROC 0.9085 ± 0.0007; K=4: 0.9084 ± 0.0008) statistically surpass the monolithic "
+        "baseline (K=1: 0.9059 ± 0.0010, DeLong p = 3.63 × 10^-4). However, extreme over-fragmentation at K=16 degrades AUROC to "
+        "0.9048 and triples latency. Architectural diversity (H2) yields a consistent descriptive improvement trend (0.9110 ± 0.0006; "
+        "Holm p = 0.058) with lower CKA similarity (0.9008 vs 0.9458), but is not statistically significant at alpha = 0.05. "
+        "Learned Top-2 sparse routing (H3) achieves diagnostic parity (0.9113) while reducing computation by 28.2% relative to dense "
+        "ensembling (297.8 vs 414.9 MFLOPs). Selective abstention (H4) on the 10% most uncertain records achieves a 4.18% relative "
+        "risk reduction (p = 0.0093). Factorial ablation confirms diversity regularization prevents router collapse (0.9088 vs 0.9049)."
     )
     r_abs = p_abs.add_run(abstract_text)
     r_abs.font.size = Pt(9)
