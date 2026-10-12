@@ -27,13 +27,13 @@
 \RequirePackage{microtype}
 \RequirePackage{fancyhdr}
 
-% Conference identifier on the first page only.
-\newcommand{\ICICConferenceIdentifier}{979-8-3195-2818-6/26/\$31.00~\textcopyright 2026 IEEE}
+% Conference identifier removed.
+\newcommand{\ICICConferenceIdentifier}{}
 \fancypagestyle{ICICfirstpage}{%
   \fancyhf{}%
   \renewcommand{\headrulewidth}{0pt}%
   \renewcommand{\footrulewidth}{0pt}%
-  \fancyfoot[L]{\fontsize{10}{12}\selectfont\ICICConferenceIdentifier}%
+  \fancyfoot[L]{}%
 }
 
 % Base typography and paragraph formatting.
