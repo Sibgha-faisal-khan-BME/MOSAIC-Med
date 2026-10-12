@@ -618,7 +618,9 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     
     add_h2("F. Loss-Term Regularization Ablation")
     add_p(
-        "Table VII presents the factorial ablation of router regularization across three seeds on frozen experts with cached logits."
+        "Table VII presents the factorial ablation of router regularization across three seeds (42--44) on frozen expert backbones with cached logits (Holm-corrected across m = 4). "
+        "In contrast, end-to-end evaluations in Tables III and IV utilize five seeds (42--46). Diversity entropy regularization (L_div) recovers AUROC to 0.9088 ± 0.0015; "
+        "the complete formulation (L_diag + L_div + L_fail) achieves 0.9090 ± 0.0013, preventing gating collapse and regularizing dynamic routing."
     )
     
     add_tbl(
@@ -632,14 +634,6 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
             ["5. All Terms (L_diag + L_div + L_fail)", "0.9090 ± 0.0013", "0.7702 ± 0.0024", "0.0879", "0.2580"]
         ],
         [Inches(2.5), Inches(1.3), Inches(1.3), Inches(0.9), Inches(0.8)]
-    )
-    
-    add_p(
-        "With diversity entropy regularization (L_div) it is possible to recover the AUROC to 0.9088 ± 0.0015, which "
-        "introduces an exploratory balance. The complete formulation (L_diag + L_div + L_fail) gets 0.9090 ± 0.0013 "
-        "(Brier 0.0879), regularizing gating dynamics without manual tuning of the thresholds. Multiplicity (K=2: 0.9085), "
-        "diversity (0.9110), and routing (0.9113) enhance discrimination relative to SingleLarge (0.9059), while 90% selective "
-        "deferral reduces retained Hamming risk (10.83% -> 10.37%)."
     )
 
     # =========================================================================
@@ -661,20 +655,17 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     add_h2("B. Negative Results and Theoretical Boundaries")
     add_p(
         "Capacity Under-Allocation and Gating Collapse: At K = 16 (~125K parameters/expert), sub-networks lack capacity for multi-lead morphology extraction, "
-        "tripling latency to 6.78 ms. Furthermore, training the router using diagnostic loss alone results in gating collapse into a single expert (0.9049 vs 0.9108), "
+        "tripling latency to 6.78 ms. Furthermore, training the router using diagnostic loss alone collapses into a single expert (0.9049 vs 0.9108), "
         "demonstrating that diversity regularization is essential."
     )
     
     add_h2("C. Practical Deployment Implications and Limitations")
     add_p(
         "For resource-constrained devices, Top-2 sparse routing cuts inference FLOPs by 28.2% relative to dense ensembling, while uncertainty deferral isolates "
-        "ambiguous tracings for potential clinician overread in retrospective evaluation. These benchmarks demonstrate technical feasibility rather than clinical "
-        "efficacy or improved patient outcomes."
-    )
-    add_p(
-        "Limitations: Assessments were conducted under edge parameter budgets (~2.0M parameters), and evaluating multiplicity at foundation scales is left for future work [9, 18]. "
-        "Parameter budgets are matched across arms, but inference compute is not: the Top-2 router requires 297.8 MFLOPs versus 123.9 for the monolithic baseline. Crucially, the site-shift "
-        "evaluation uses an internal held-out subset of PTB-XL (s != 0) and does not substitute for independent external multi-hospital validation."
+        "ambiguous tracings for clinician review. These benchmarks demonstrate technical feasibility rather than clinical efficacy. Limitations: Assessments were "
+        "conducted under edge parameter budgets (~2.0M parameters); evaluating foundation scales is left for future work [9, 18]. Parameter budgets are matched across "
+        "arms, but inference compute is not: Top-2 requires 297.8 MFLOPs versus 123.9 for baseline. Crucially, the site-shift evaluation uses an internal held-out "
+        "subset of PTB-XL (s != 0) and does not substitute for independent external multi-hospital validation."
     )
 
     # =========================================================================
@@ -682,16 +673,15 @@ def make_word_doc(output_path='results/MOSAIC_Med_Paper.docx'):
     # =========================================================================
     add_h1("V. Conclusion")
     add_p(
-        "This study demonstrates that fixed-budget model multiplicity statistically outperforms monolithic scale in 12-lead ECG diagnosis, while architectural diversity exhibits "
-        "a positive descriptive improvement trend (p = 0.058). Distributing a ~2.0M parameter budget across specialized compact networks provides superior discrimination, "
-        "calibration, and noise resilience over an equivalent monolithic baseline. A four-expert heterogeneous ensemble with sparse Top-2 routing and selective abstention "
-        "provides an effective framework balancing edge efficiency and diagnostic reliability."
+        "This study demonstrates that fixed-budget model multiplicity statistically outperforms monolithic scale in 12-lead ECG diagnosis, while architectural "
+        "diversity exhibits a consistent descriptive improvement trend (p = 0.058). Distributing a ~2.0M parameter budget across compact specialized networks "
+        "balances edge efficiency and diagnostic reliability."
     )
 
     add_h1("Data and Code Availability")
     add_p(
         "The PTB-XL dataset is publicly available at https://physionet.org/content/ptb-xl/1.0.3/ [4]. "
-        "All code, configurations and scripts to reproduce the tables and figures are available at https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med."
+        "Experiment code and reproduction scripts are available at https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med."
     )
 
     # =========================================================================

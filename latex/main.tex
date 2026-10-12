@@ -337,7 +337,7 @@ As shown in Table~\ref{tab:selective_summary} and plotted in Fig.~\ref{fig:risk_
 \subsection{Loss-Term Regularization Ablation}
 \label{subsec:res_ablation}
 
-Table~\ref{tab:loss_ablation} presents the factorial ablation of router regularization across three seeds (42--44) on frozen expert backbones with cached logits. Metrics for baseline Uniform Average ($0.9108 \pm 0.0009$ AUROC, $0.7749 \pm 0.0013$ AUPRC) reflect this 3-seed protocol on frozen backbones, whereas end-to-end evaluations in Tables~\ref{tab:matched_control} and~\ref{tab:routing_summary} utilize five independent seeds (42--46). Comparisons against baseline Uniform Average ($m=4$) are controlled using Holm-Bonferroni correction.
+Table~\ref{tab:loss_ablation} presents the factorial ablation of router regularization across three seeds (42--44) on frozen expert backbones with cached logits (Holm-corrected across $m=4$). In contrast, end-to-end evaluations in Tables~\ref{tab:matched_control} and~\ref{tab:routing_summary} utilize five seeds (42--46). Diversity entropy regularization ($\mathcal{L}_{\text{div}}$) recovers AUROC to $0.9088 \pm 0.0015$; the complete formulation ($\mathcal{L}_{\text{diag}} + \mathcal{L}_{\text{div}} + \mathcal{L}_{\text{fail}}$) achieves $0.9090 \pm 0.0013$, preventing gating collapse and regularizing dynamic routing.
 
 \begin{table}[t]
 \caption{Loss-Term Regularization Ablation Across 3 Seeds}
@@ -360,41 +360,33 @@ Table~\ref{tab:loss_ablation} presents the factorial ablation of router regulari
 \end{ICICtable}
 \end{table}
 
-Diversity entropy regularization ($\mathcal{L}_{\text{div}}$) recovers AUROC to $0.9088 \pm 0.0015$; the complete formulation ($\mathcal{L}_{\text{diag}} + \mathcal{L}_{\text{div}} + \mathcal{L}_{\text{fail}}$) achieves $0.9090 \pm 0.0013$, regularizing gating dynamics. Multiplicity ($K=2$: 0.9085), diversity (0.9110), and routing (0.9113) enhance discrimination relative to SingleLarge (0.9059), while 90\% selective deferral reduces retained Hamming risk ($10.83\% \to 10.37\%$).
-
-\enlargethispage{5\baselineskip}
 \section{Discussion}
 \label{sec:discussion}
 
 \subsection{Evaluation of Formal Hypotheses}
 \label{subsec:disc_hypotheses}
 
-Under an approximately fixed parameter budget, capacity splitting acts as a variance-reduction regularizer: Multiplicity Superiority (H1) is validated as dividing fixed capacity into $K = 2, 4$ experts statistically outperforms monolithic scale ($K = 1$, DeLong $p = 3.63 \times 10^{-4}$)~\cite{lakshminarayanan2017simple, chen2025budget}. In \textit{Architectural Diversity (H2)}, evaluating heterogeneous against homogeneous ensembles shows a consistent improvement trend (Holm $p = 0.058$) in discrimination and calibration (Brier 0.0867 vs 0.0881) by reducing CKA similarity (0.9008 vs 0.9458)~\cite{zhou2025diversity}, though it does not reach significance at $\alpha = 0.05$. For \textit{Sparse Adaptive Routing (H3)}, Top-2 routing achieves competitive discrimination ($0.9113 \pm 0.0008$ vs. dense routing $0.9118 \pm 0.0004$; paired $p = 0.163$) while cutting FLOPs by 28.2\% relative to dense ensembling (297.8 vs 414.9 MFLOPs), without implying formal statistical equivalence. Finally, under \textit{Selective Deferral (H4)}, combining predictive entropy and ensemble disagreement yields well-ordered uncertainty, achieving a $4.18\%$ relative risk reduction in retained Hamming error at 90\% coverage ($p = 0.0093$)~\cite{kompa2024second, argha2025selective}.
+Under an approximately fixed parameter budget, capacity splitting acts as a variance-reduction regularizer: Multiplicity Superiority (H1) is validated as $K = 2, 4$ experts statistically outperform monolithic scale ($K = 1$, DeLong $p = 3.63 \times 10^{-4}$)~\cite{lakshminarayanan2017simple, chen2025budget}. For \textit{Architectural Diversity (H2)}, evaluating heterogeneous against homogeneous ensembles shows a consistent improvement trend (Holm $p = 0.058$) in discrimination and calibration (Brier 0.0867 vs 0.0881) by reducing CKA similarity (0.9008 vs 0.9458)~\cite{zhou2025diversity}, though it does not reach significance at $\alpha = 0.05$. In \textit{Sparse Adaptive Routing (H3)}, Top-2 routing achieves competitive discrimination ($0.9113 \pm 0.0008$ vs dense routing $0.9118 \pm 0.0004$; paired $p = 0.163$) while cutting FLOPs by 28.2\% relative to dense ensembling (297.8 vs 414.9 MFLOPs), without implying formal statistical equivalence. Under \textit{Selective Deferral (H4)}, combining predictive entropy and ensemble disagreement yields well-ordered uncertainty, achieving a $4.18\%$ relative risk reduction in retained Hamming error at 90\% coverage ($p = 0.0093$)~\cite{kompa2024second, argha2025selective}.
 
 \subsection{Negative Results and Theoretical Boundaries}
 \label{subsec:disc_negative}
 
-\textbf{Capacity Under-Allocation and Gating Collapse:} At $K=16$ ($\sim$125K parameters/expert), sub-networks lack capacity for multi-lead extraction, tripling latency to 6.78~ms. Furthermore, training the router using diagnostic loss alone results in gating collapse into a single expert ($0.9049$ vs $0.9108$), demonstrating that diversity regularization is essential.
+\textbf{Capacity Under-Allocation and Gating Collapse:} At $K=16$ ($\sim$125K parameters/expert), sub-networks lack capacity for multi-lead extraction, tripling latency to 6.78~ms. Furthermore, training the router using diagnostic loss alone collapses into a single expert ($0.9049$ vs $0.9108$), demonstrating that diversity regularization is essential.
 
 \subsection{Practical Deployment Implications and Limitations}
 \label{subsec:disc_translation_limitations}
 
-For resource-constrained devices, Top-2 sparse routing cuts inference FLOPs by $28.2\%$ relative to dense ensembling, while uncertainty deferral isolates ambiguous tracings for potential clinician overread in retrospective evaluation. These benchmarks demonstrate technical feasibility rather than clinical efficacy or improved patient outcomes. \textbf{Limitations:} Assessments were conducted under edge parameter budgets ($\sim$2.0M parameters); evaluating foundation scales is left for future work~\cite{li2024ecgfounder, xu2026ecgmoe}. Parameter budgets are matched across arms, but inference compute is not: Top-2 routing requires 297.8 MFLOPs versus 123.9 for the monolithic baseline. Crucially, the site-shift evaluation uses an internal held-out subset of PTB-XL ($s \ne 0$) and does not substitute for independent external multi-hospital validation.
+For resource-constrained devices, Top-2 sparse routing cuts inference FLOPs by $28.2\%$ relative to dense ensembling, while uncertainty deferral isolates ambiguous tracings for clinician review. These benchmarks demonstrate technical feasibility rather than clinical efficacy. \textbf{Limitations:} Assessments were conducted under edge parameter budgets ($\sim$2.0M parameters); evaluating foundation scales is left for future work~\cite{li2024ecgfounder, xu2026ecgmoe}. Parameter budgets are matched across arms, but compute is not: Top-2 requires 297.8 MFLOPs versus 123.9 for baseline. Crucially, the site-shift evaluation uses an internal held-out subset of PTB-XL ($s \ne 0$) and does not substitute for independent external multi-hospital validation.
 
-\enlargethispage{9\baselineskip}
 \section{Conclusion}
 \label{sec:conclusion}
 
 This study demonstrates that fixed-budget model multiplicity statistically outperforms monolithic scale in 12-lead ECG diagnosis, while architectural diversity exhibits a consistent descriptive improvement trend ($p = 0.058$). Distributing a $\sim$2.0M parameter budget across compact specialized networks balances edge efficiency and diagnostic reliability.
 
-\vspace{-4pt}
-\ICICComponentHeading{Data and Code Availability}
-\vspace{-4pt}
-{\scriptsize The PTB-XL dataset is publicly available at \url{https://physionet.org/content/ptb-xl/1.0.3/}~\cite{wagner2020ptbxl}. Experiment code and reproduction scripts are available at \url{https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med}.\par}
-\vspace{-4pt}
+\vspace{2pt}
+\noindent\textbf{Data and Code Availability:} {\scriptsize The PTB-XL dataset is publicly available at \url{https://physionet.org/content/ptb-xl/1.0.3/}~\cite{wagner2020ptbxl}. Experiment code and reproduction scripts are available at \url{https://github.com/Sibgha-faisal-khan-BME/MOSAIC-Med}.\par}
 
 {\scriptsize
-\def\IEEEbibitemsep{-0.5pt plus 0.5pt}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 }
